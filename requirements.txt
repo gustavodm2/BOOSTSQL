@@ -1,7 +1,8 @@
-scikit-learn==1.3.0
-pandas==2.0.3
-numpy==1.24.3
-sqlparse==0.4.4
-xgboost==1.7.6
-lightgbm==4.0.0
-joblib==1.3.2
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.2.0
+sqlparse>=0.4.0
+xgboost>=1.7.0
+lightgbm>=4.0.0
+tqdm>=4.65.0
+psutil>=5.9.0
