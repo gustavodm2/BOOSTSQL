@@ -12,15 +12,13 @@ class SQLBoostOptimizer:
             self.model_trainer.load_model(model_path)
     
     def prepare_training_data(self, queries_data):
-        """Prepara dados de treinamento para 500k queries"""
-        print("🔨 Extraindo características...")
         
         features = []
         execution_times = []
         
         for i, query_info in enumerate(queries_data):
             if i % 50000 == 0:
-                print(f"📊 Processadas {i}/{len(queries_data)} queries...")
+                print(f"Processadas {i}/{len(queries_data)} queries...")
             
             query = query_info['query_sql']
             exec_time = query_info['execution_time_ms']
@@ -32,7 +30,7 @@ class SQLBoostOptimizer:
         X = pd.DataFrame(features, columns=self.feature_extractor.feature_names)
         y = np.array(execution_times)
         
-        print(f"✅ Dataset preparado: {X.shape[0]} amostras")
+        print(f"Dataset preparado: {X.shape[0]} amostras")
         return X, y
     
     def train(self, queries_data, save_path='models/sqlboost_500k.pkl'):
@@ -61,18 +59,17 @@ class SQLBoostOptimizer:
         features = self.feature_extractor.extract_features(query)
         suggestions = []
         
-        # Heurísticas baseadas em características
         if features['num_joins'] > 3:
-            suggestions.append("🔍 Múltiplos JOINs - Considere usar CTEs")
+            suggestions.append("Múltiplos JOINs - Considere usar CTEs")
         
         if features['num_subqueries'] > 2:
-            suggestions.append("🔄 Muitas subqueries - Avalie usar JOINs")
+            suggestions.append("Muitas subqueries - Avalie usar JOINs")
         
         if features['nested_level'] > 3:
-            suggestions.append("🌀 Query muito aninhada - Simplifique")
+            suggestions.append("Query muito aninhada - Simplifique")
         
         if features['has_window_functions'] and features['num_tables'] > 2:
-            suggestions.append("📊 Window functions complexas - Verifique performance")
+            suggestions.append("Window functions complexas - Verifique performance")
         
         predicted_time = self.predict_execution_time(query)
         

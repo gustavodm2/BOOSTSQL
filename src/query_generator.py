@@ -29,20 +29,19 @@ class MassiveQueryGenerator:
     
     def generate_500k_dataset(self) -> List[Dict]:
         """Gera 500.000 queries cobrindo TODOS os níveis de complexidade"""
-        print("🚀 Gerando 500.000 queries com complexidade variada...")
+        print("Gerando 500.000 queries com complexidade variada...")
         
         dataset = []
         
-        # Distribuição por complexidade
         complexity_distribution = {
-            'simple': 150000,    # 30% - queries básicas
-            'medium': 200000,    # 40% - queries intermediárias  
-            'complex': 100000,   # 20% - queries complexas
-            'expert': 50000      # 10% - queries expert
+            'simple': 150000,    
+            'medium': 200000,    
+            'complex': 100000,   
+            'expert': 50000     
         }
         
         for complexity, count in complexity_distribution.items():
-            print(f"📊 Gerando {count} queries {complexity}...")
+            print(f"Gerando {count} queries {complexity}...")
             for i in tqdm(range(count), desc=f"{complexity}"):
                 query = self._generate_query_by_complexity(complexity)
                 exec_time = self._calculate_execution_time(query, complexity)
@@ -54,7 +53,7 @@ class MassiveQueryGenerator:
                     'complexity': complexity
                 })
         
-        print(f"✅ Dataset gerado: {len(dataset):,} queries")
+        print(f"Dataset gerado: {len(dataset):,} queries")
         return dataset
     
     def _generate_query_by_complexity(self, complexity: str) -> str:
@@ -65,7 +64,7 @@ class MassiveQueryGenerator:
             return self._generate_medium_query()
         elif complexity == 'complex':
             return self._generate_complex_query()
-        else:  # expert
+        else:  
             return self._generate_expert_query()
     
     def _generate_simple_query(self) -> str:
@@ -152,7 +151,6 @@ class MassiveQueryGenerator:
         tables = random.sample(self.tables, 3)
         template = random.choice(templates)
         
-        # Prepara os parâmetros
         params = {
             't1_cols': self._select_columns(tables[0], 1, 2),
             't2_cols': self._select_columns(tables[1], 1, 2),
@@ -176,7 +174,6 @@ class MassiveQueryGenerator:
         return template.format(**params)
 
     def _get_foreign_key(self, table_name):
-        """Gera nome de foreign key realista"""
         if table_name.endswith('s'):
             return table_name[:-1] + '_id'
         return table_name + '_id'
@@ -320,7 +317,6 @@ class MassiveQueryGenerator:
         
         base_time = base_times[complexity]
         
-        # Fatores de ajuste baseados na query
         complexity_factors = {
             'JOIN': 1.5, 'GROUP BY': 1.3, 'ORDER BY': 1.2, 'WHERE': 1.1,
             'HAVING': 1.4, 'WITH': 1.8, 'SUBQUERY': 1.6, 'UNION': 1.7,
@@ -334,11 +330,9 @@ class MassiveQueryGenerator:
             count = query_upper.count(factor)
             multiplier *= (weight ** min(count, 5))
         
-        # Fator de tamanho
         size_factor = min(len(query) / 1000, 3.0)
         multiplier *= (1 + size_factor * 0.3)
         
-        # Variação aleatória
         variation = random.uniform(0.7, 1.3)
         
         return base_time * multiplier * variation

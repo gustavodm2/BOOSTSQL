@@ -66,7 +66,6 @@ class SQLFeatureExtractor:
         return where_clause.count('AND') + where_clause.count('OR') + 1
     
     def _count_tables(self, query):
-        # Conta tabelas mencionadas (aproximado)
         tables = set()
         from_match = re.search(r'FROM\s+([^(]+?)(?:\s+WHERE|\s+GROUP|\s+ORDER|\s+LIMIT|$)', query.upper())
         if from_match:

@@ -20,20 +20,16 @@ class ModelTrainer:
         self.feature_extractor = None
     
     def train_models(self, X, y):
-        """Treina e compara modelos com 500k queries"""
-        print("🧠 Treinando modelos com 500.000 queries...")
         
         results = {}
         n_splits = min(5, len(X) // 10000)
         
         for name, model in self.models.items():
-            print(f"📚 Treinando {name}...")
+            print(f"Treinando {name}...")
             
-            # Validação cruzada
             kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
             cv_scores = cross_val_score(model, X, y, cv=kf, scoring='neg_mean_absolute_error')
             
-            # Treinamento final
             model.fit(X, y)
             y_pred = model.predict(X)
             
@@ -46,7 +42,6 @@ class ModelTrainer:
                 'cv_mae_std': cv_scores.std()
             }
         
-        # Seleciona melhor modelo
         best_model_name = max(results.keys(), key=lambda x: results[x]['r2'])
         self.best_model = results[best_model_name]['model']
         
@@ -58,11 +53,10 @@ class ModelTrainer:
             print(f"R²: {metrics['r2']:.3f}")
             print(f"CV MAE: {metrics['cv_mae_mean']:.2f} ± {metrics['cv_mae_std']:.2f} ms")
         
-        print(f"\n🏆 MELHOR MODELO: {best_model_name}")
+        print(f"\nMELHOR MODELO: {best_model_name}")
         return results
     
     def save_model(self, filepath):
-        """Salva modelo treinado"""
         if self.best_model is not None:
             joblib.dump({
                 'model': self.best_model,
@@ -71,7 +65,6 @@ class ModelTrainer:
             print(f"💾 Modelo salvo: {filepath}")
     
     def load_model(self, filepath):
-        """Carrega modelo salvo"""
         loaded = joblib.load(filepath)
         self.best_model = loaded['model']
         self.feature_extractor = loaded['feature_extractor']
