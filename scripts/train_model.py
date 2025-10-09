@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-"""
-TREINAMENTO COM 500.000 QUERIES - SCRIPT PRINCIPAL
-"""
+
 
 import sys
 import os
@@ -14,30 +11,26 @@ from src.query_optimizer import SQLBoostOptimizer
 def main():
     print("🚀 SQLBOOST - TREINAMENTO COM 500.000 QUERIES")
     
-    # 1. Gera dataset massivo
     print("\n📊 GERANDO 500.000 QUERIES...")
     generator = MassiveQueryGenerator()
     dataset = generator.generate_500k_dataset()
     
-    # Salva dataset
     df = pd.DataFrame(dataset)
     os.makedirs('data', exist_ok=True)
     df.to_csv('data/500k_queries_dataset.csv', index=False)
     print(f"💾 Dataset salvo: data/500k_queries_dataset.csv")
     
-    # 2. Treina modelo
     print("\n🧠 INICIANDO TREINAMENTO...")
     optimizer = SQLBoostOptimizer()
     
     results = optimizer.train(dataset, 'models/sqlboost_500k.pkl')
     
-    # 3. Testes
     print("\n🎯 TESTANDO MODELO...")
     
     test_queries = [
-        "SELECT * FROM users",  # Simples
-        "SELECT u.name, COUNT(o.id) FROM users u JOIN orders o ON u.id = o.user_id GROUP BY u.name",  # Médio
-        "WITH user_orders AS (SELECT user_id, COUNT(*) as order_count FROM orders GROUP BY user_id) SELECT u.name, uo.order_count FROM users u JOIN user_orders uo ON u.id = uo.user_id WHERE uo.order_count > 5"  # Complexo
+        "SELECT * FROM users",  
+        "SELECT u.name, COUNT(o.id) FROM users u JOIN orders o ON u.id = o.user_id GROUP BY u.name",  
+        "WITH user_orders AS (SELECT user_id, COUNT(*) as order_count FROM orders GROUP BY user_id) SELECT u.name, uo.order_count FROM users u JOIN user_orders uo ON u.id = uo.user_id WHERE uo.order_count > 5" 
     ]
     
     for i, query in enumerate(test_queries, 1):
