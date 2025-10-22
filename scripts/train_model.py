@@ -11,16 +11,13 @@ from src.query_optimizer import SQLBoostOptimizer
 def main():
     print("🚀 SQLBOOST - TREINAMENTO COM 500.000 QUERIES")
     
-    print("\n📊 GERANDO 500.000 QUERIES...")
     generator = MassiveQueryGenerator()
     dataset = generator.generate_500k_dataset()
     
     df = pd.DataFrame(dataset)
     os.makedirs('data', exist_ok=True)
     df.to_csv('data/500k_queries_dataset.csv', index=False)
-    print(f"💾 Dataset salvo: data/500k_queries_dataset.csv")
     
-    print("\n🧠 INICIANDO TREINAMENTO...")
     optimizer = SQLBoostOptimizer()
     
     results = optimizer.train(dataset, 'models/sqlboost_500k.pkl')

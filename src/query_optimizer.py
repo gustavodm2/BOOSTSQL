@@ -2,6 +2,12 @@ import pandas as pd
 import numpy as np
 from .feature_extractor import SQLFeatureExtractor
 from .model_trainer import ModelTrainer
+from .database_connector import DatabaseConnector
+from typing import Dict, List, Optional
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class SQLBoostOptimizer:
     def __init__(self, model_path=None):
@@ -44,14 +50,25 @@ class SQLBoostOptimizer:
         return results
     
     def predict_execution_time(self, query):
-        """Prediz tempo de execução"""
+        """Prediz tempo de execução usando ML ou medição real"""
+        # If we have a real database connection, measure actual performance
+        if self.db_connector:
+            try:
+                result = self.db_connector.execute_query_with_timing(query, iterations=1)
+                if result['success']:
+                    logger.info(f"Real execution time: {result['execution_time_ms']:.2f}ms")
+                    return result['execution_time_ms']
+            except Exception as e:
+                logger.warning(f"Real measurement failed, falling back to ML prediction: {e}")
+
+        # Fall back to ML prediction
         if self.model_trainer.best_model is None:
             raise ValueError("Modelo não treinado!")
-        
+
         features = self.feature_extractor.extract_features(query)
-        X = pd.DataFrame([list(features.values())], 
+        X = pd.DataFrame([list(features.values())],
                         columns=self.feature_extractor.feature_names)
-        
+
         return self.model_trainer.best_model.predict(X)[0]
     
     def suggest_optimizations(self, query):
