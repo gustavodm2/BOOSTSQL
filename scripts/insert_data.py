@@ -36,8 +36,8 @@ def insert_sample_data():
             cursor.execute("INSERT INTO categories (name, description) VALUES (%s, %s)",
                          (cat, f"{cat} products and accessories"))
 
-        print("   - Inserting suppliers (50)...")
-        for i in tqdm(range(50), desc="Suppliers"):
+        print("   - Inserting suppliers (5,000)...")
+        for i in tqdm(range(5000), desc="Suppliers"):
             name = f"Supplier {i+1}"
             contact = f"{random.choice(first_names)} {random.choice(last_names)}"
             cursor.execute("""
@@ -52,8 +52,8 @@ def insert_sample_data():
             cursor.execute("INSERT INTO departments (name, budget) VALUES (%s, %s)",
                          (dept, random.randint(50000, 500000)))
 
-        print("   - Inserting users (10,000)...")
-        for i in tqdm(range(10000), desc="Users"):
+        print("   - Inserting users (25,000,000)...")
+        for i in tqdm(range(25000000), desc="Users"):
             name = f"{random.choice(first_names)} {random.choice(last_names)}"
             email = f"user{i+1}@example.com"
             age = random.randint(18, 80)
@@ -69,12 +69,12 @@ def insert_sample_data():
             """, (name, email, age, city, country, created_at, status, reputation))
 
         print("   - Inserting products (5,000)...")
-        for i in tqdm(range(5000), desc="Products"):
+        for i in tqdm(range(1000000), desc="Products"):
             name = f"{random.choice(product_names)} {random.choice(['Pro', 'Max', 'Ultra', 'Mini', 'Plus', 'X', 'Z', 'Air', 'Go', 'Lite'])}"
             category = random.choice(categories_list)
             price = round(random.uniform(10, 2000), 2)
             stock = random.randint(0, 1000)
-            supplier_id = random.randint(1, 50)
+            supplier_id = random.randint(1, 1000000)
             rating = round(random.uniform(1, 5), 1)
             description = f"High quality {category.lower()} product"
             category_id = random.randint(1, len(categories_list))
@@ -85,7 +85,7 @@ def insert_sample_data():
             """, (name, category, price, stock, supplier_id, rating, description, category_id))
 
         print("   - Inserting customers (2,000)...")
-        for i in tqdm(range(2000), desc="Customers"):
+        for i in tqdm(range(5000000), desc="Customers"):
             company_name = f"Company {i+1}" if random.random() > 0.3 else None
             contact_name = f"{random.choice(first_names)} {random.choice(last_names)}"
             city = random.choice(cities)
@@ -99,7 +99,7 @@ def insert_sample_data():
             """, (company_name, contact_name, city, country, phone, email))
 
         print("   - Inserting employees (500)...")
-        for i in tqdm(range(500), desc="Employees"):
+        for i in tqdm(range(100000), desc="Employees"):
             name = f"{random.choice(first_names)} {random.choice(last_names)}"
             dept_id = random.randint(1, len(departments_list))
             salary = round(random.uniform(30000, 150000), 2)
@@ -112,9 +112,9 @@ def insert_sample_data():
             """, (name, dept_id, salary, hire_date.date(), email))
 
         print("   - Inserting orders and order items (25,000 orders)...")
-        for i in tqdm(range(25000), desc="Orders"):
-            user_id = random.randint(1, 10000)
-            customer_id = random.randint(1, 2000)
+        for i in tqdm(range(6000000), desc="Orders"):
+            user_id = random.randint(1, 25000000)
+            customer_id = random.randint(1, 5000000)
             order_date = datetime.now() - timedelta(days=random.randint(0, 365))
             status = random.choice(['pending', 'processing', 'shipped', 'delivered', 'cancelled'])
 
@@ -129,7 +129,7 @@ def insert_sample_data():
             total_amount = 0
 
             for _ in range(num_items):
-                product_id = random.randint(1, 5000)
+                product_id = random.randint(1, 1000000)
                 quantity = random.randint(1, 10)
 
                 cursor.execute("SELECT price FROM products WHERE id = %s", (product_id,))
@@ -162,8 +162,8 @@ def insert_sample_data():
             """, (order_id, amount, payment_date, method, status))
 
         print("   - Inserting user sessions (50,000)...")
-        for i in tqdm(range(50000), desc="Sessions"):
-            user_id = random.randint(1, 10000)
+        for i in tqdm(range(12000000), desc="Sessions"):
+            user_id = random.randint(1, 25000000)
             login_time = datetime.now() - timedelta(days=random.randint(0, 30))
             logout_time = login_time + timedelta(minutes=random.randint(5, 480)) if random.random() > 0.1 else None
             ip_address = f"192.168.{random.randint(1,255)}.{random.randint(1,255)}"
@@ -174,9 +174,9 @@ def insert_sample_data():
             """, (user_id, login_time, logout_time, ip_address))
 
         print("   - Inserting product reviews (15,000)...")
-        for i in tqdm(range(15000), desc="Reviews"):
-            product_id = random.randint(1, 5000)
-            user_id = random.randint(1, 10000)
+        for i in tqdm(range(4000000), desc="Reviews"):
+            product_id = random.randint(1, 1000000)
+            user_id = random.randint(1, 25000000)
             rating = random.randint(1, 5)
             comment = random.choice(review_comments)
             created_at = datetime.now() - timedelta(days=random.randint(0, 365))
@@ -187,8 +187,8 @@ def insert_sample_data():
             """, (product_id, user_id, rating, comment, created_at))
 
         print("   - Inserting inventory records (5,000)...")
-        for i in tqdm(range(5000), desc="Inventory"):
-            product_id = random.randint(1, 5000)
+        for i in tqdm(range(1000000), desc="Inventory"):
+            product_id = random.randint(1, 1000000)
             warehouse_location = f"Warehouse-{random.choice(['A', 'B', 'C'])}-{random.randint(1,10)}"
             quantity = random.randint(0, 500)
             last_updated = datetime.now() - timedelta(days=random.randint(0, 30))
@@ -199,9 +199,9 @@ def insert_sample_data():
             """, (product_id, warehouse_location, quantity, last_updated))
 
         print("   - Inserting sales records (10,000)...")
-        for i in tqdm(range(10000), desc="Sales"):
-            product_id = random.randint(1, 5000)
-            employee_id = random.randint(1, 500)
+        for i in tqdm(range(2000000), desc="Sales"):
+            product_id = random.randint(1, 1000000)
+            employee_id = random.randint(1, 100000)
             quantity = random.randint(1, 20)
             sale_date = datetime.now() - timedelta(days=random.randint(0, 365))
 
@@ -215,8 +215,8 @@ def insert_sample_data():
             """, (product_id, employee_id, quantity, sale_date, total_amount))
 
         print("   - Inserting transactions (30,000)...")
-        for i in tqdm(range(30000), desc="Transactions"):
-            user_id = random.randint(1, 10000)
+        for i in tqdm(range(7000000), desc="Transactions"):
+            user_id = random.randint(1, 25000000)
             amount = round(random.uniform(10, 5000), 2)
             transaction_date = datetime.now() - timedelta(days=random.randint(0, 365))
             type_ = random.choice(['purchase', 'refund', 'deposit', 'withdrawal'])
@@ -228,8 +228,8 @@ def insert_sample_data():
             """, (user_id, amount, transaction_date, type_, status))
 
         print("   - Inserting logs (20,000)...")
-        for i in tqdm(range(20000), desc="Logs"):
-            user_id = random.randint(1, 10000)
+        for i in tqdm(range(5000000), desc="Logs"):
+            user_id = random.randint(1, 25000000)
             action = random.choice(['login', 'logout', 'purchase', 'view_product', 'add_to_cart', 'checkout'])
             timestamp = datetime.now() - timedelta(days=random.randint(0, 30))
             ip_address = f"192.168.{random.randint(1,255)}.{random.randint(1,255)}"
@@ -241,7 +241,7 @@ def insert_sample_data():
             """, (user_id, action, timestamp, ip_address, details))
 
         print("   - Inserting profiles (10,000)...")
-        for i in tqdm(range(10000), desc="Profiles"):
+        for i in tqdm(range(25000000), desc="Profiles"):
             user_id = i + 1
             bio = f"Bio for user {user_id}"
             avatar_url = f"https://example.com/avatar/{user_id}.jpg"

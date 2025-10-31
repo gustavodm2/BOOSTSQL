@@ -3,16 +3,26 @@ import re
 import numpy as np
 from typing import Dict
 
+try:
+    import sqlparse
+    HAS_SQLPARSE = True
+except ImportError:
+    sqlparse = None
+    HAS_SQLPARSE = False
+
 class SQLFeatureExtractor:
 
     def __init__(self):
         self.feature_names = ['num_joins', 'num_subqueries', 'has_group_by', 'has_order_by', 'has_where', 'num_conditions', 'num_tables', 'query_length', 'has_aggregation', 'num_select_columns', 'has_having', 'has_limit', 'has_distinct', 'join_complexity', 'nested_level', 'has_union', 'has_cte', 'has_window_functions', 'string_operations']
 
     def extract_features(self, query: str) -> Dict[str, float]:
+        if not HAS_SQLPARSE:
+            return self._fallback_features(query)
+
         try:
             parsed = sqlparse.parse(query)[0]
         except:
-            return self._default_features()
+            return self._fallback_features(query)
         query_upper = query.upper()
         features = {'num_joins': self._count_joins(parsed), 'num_subqueries': self._count_subqueries(query), 'has_group_by': 1.0 if 'GROUP BY' in query_upper else 0.0, 'has_order_by': 1.0 if 'ORDER BY' in query_upper else 0.0, 'has_where': 1.0 if 'WHERE' in query_upper else 0.0, 'num_conditions': self._count_conditions(query), 'num_tables': self._count_tables(query), 'query_length': len(query), 'has_aggregation': 1.0 if self._has_aggregation(query) else 0.0, 'num_select_columns': self._count_select_columns(parsed), 'has_having': 1.0 if 'HAVING' in query_upper else 0.0, 'has_limit': 1.0 if 'LIMIT' in query_upper else 0.0, 'has_distinct': 1.0 if 'DISTINCT' in query_upper else 0.0, 'join_complexity': self._calculate_join_complexity(parsed), 'nested_level': query.count('('), 'has_union': 1.0 if 'UNION' in query_upper else 0.0, 'has_cte': 1.0 if 'WITH' in query_upper else 0.0, 'has_window_functions': 1.0 if any((f in query_upper for f in ['OVER(', 'RANK()', 'ROW_NUMBER()'])) else 0.0, 'string_operations': self._count_string_operations(query)}
         return features

@@ -1,20 +1,68 @@
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import cross_val_score, KFold, train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import xgboost as xgb
-import lightgbm as lgb
 import joblib
 import os
 from tqdm import tqdm
 
+try:
+    import xgboost as xgb
+    HAS_XGBOOST = True
+except ImportError:
+    HAS_XGBOOST = False
+
+try:
+    import lightgbm as lgb
+    HAS_LIGHTGBM = True
+except ImportError:
+    HAS_LIGHTGBM = False
+
 class ModelTrainer:
 
-    def __init__(self):
-        self.models = {'random_forest': RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1), 'xgboost': xgb.XGBRegressor(n_estimators=100, random_state=42, n_jobs=-1), 'lightgbm': lgb.LGBMRegressor(n_estimators=100, random_state=42, n_jobs=-1)}
+    def __init__(self, config=None):
+        self.config = config
+        self.models = {}
         self.best_model = None
-        self.feature_extractor = None
+        self._initialize_models()
+
+    def _initialize_models(self):
+        """Initialize models with configurable parameters"""
+        # Always available models
+        self.models['linear_regression'] = LinearRegression()
+        self.models['random_forest'] = RandomForestRegressor(
+            n_estimators=self.config.ml_training['models']['random_forest']['n_estimators'] if self.config else 100,
+            max_depth=self.config.ml_training['models']['random_forest']['max_depth'] if self.config else None,
+            random_state=self.config.ml_training['models']['random_forest']['random_state'] if self.config else 42,
+            n_jobs=-1
+        )
+        self.models['gradient_boosting'] = GradientBoostingRegressor(
+            n_estimators=self.config.ml_training['models']['gradient_boosting']['n_estimators'] if self.config else 100,
+            learning_rate=self.config.ml_training['models']['gradient_boosting']['learning_rate'] if self.config else 0.1,
+            max_depth=self.config.ml_training['models']['gradient_boosting']['max_depth'] if self.config else 3,
+            random_state=self.config.ml_training['models']['gradient_boosting']['random_state'] if self.config else 42
+        )
+
+        # Optional models (only if dependencies are available)
+        if HAS_XGBOOST:
+            self.models['xgboost'] = xgb.XGBRegressor(
+                n_estimators=self.config.ml_training['models']['xgboost']['n_estimators'] if self.config else 100,
+                learning_rate=self.config.ml_training['models']['xgboost']['learning_rate'] if self.config else 0.1,
+                max_depth=self.config.ml_training['models']['xgboost']['max_depth'] if self.config else 3,
+                random_state=self.config.ml_training['models']['xgboost']['random_state'] if self.config else 42,
+                n_jobs=-1
+            )
+
+        if HAS_LIGHTGBM:
+            self.models['lightgbm'] = lgb.LGBMRegressor(
+                n_estimators=self.config.ml_training['models']['lightgbm']['n_estimators'] if self.config else 100,
+                learning_rate=self.config.ml_training['models']['lightgbm']['learning_rate'] if self.config else 0.1,
+                max_depth=self.config.ml_training['models']['lightgbm']['max_depth'] if self.config else 3,
+                random_state=self.config.ml_training['models']['lightgbm']['random_state'] if self.config else 42,
+                n_jobs=-1
+            )
 
     def train_models(self, X, y):
         results = {}
