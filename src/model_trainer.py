@@ -22,15 +22,15 @@ except ImportError:
 
 class ModelTrainer:
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, feature_extractor=None):
         self.config = config
+        self.feature_extractor = feature_extractor
         self.models = {}
         self.best_model = None
         self._initialize_models()
 
     def _initialize_models(self):
-        """Initialize models with configurable parameters"""
-        # Always available models
+        
         self.models['linear_regression'] = LinearRegression()
         self.models['random_forest'] = RandomForestRegressor(
             n_estimators=self.config.ml_training['models']['random_forest']['n_estimators'] if self.config else 100,
@@ -45,7 +45,6 @@ class ModelTrainer:
             random_state=self.config.ml_training['models']['gradient_boosting']['random_state'] if self.config else 42
         )
 
-        # Optional models (only if dependencies are available)
         if HAS_XGBOOST:
             self.models['xgboost'] = xgb.XGBRegressor(
                 n_estimators=self.config.ml_training['models']['xgboost']['n_estimators'] if self.config else 100,
@@ -66,7 +65,7 @@ class ModelTrainer:
 
     def train_models(self, X, y):
         results = {}
-        n_splits = min(5, len(X) // 10000)
+        n_splits = max(2, min(5, len(X) // 100))
         for name, model in self.models.items():
             print(f'Treinando {name}...')
             kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
@@ -89,7 +88,7 @@ class ModelTrainer:
     def save_model(self, filepath):
         if self.best_model is not None:
             joblib.dump({'model': self.best_model, 'feature_extractor': self.feature_extractor}, filepath)
-            print(f'💾 Modelo salvo: {filepath}')
+            print(f' Modelo salvo: {filepath}')
 
     def load_model(self, filepath):
         loaded = joblib.load(filepath)

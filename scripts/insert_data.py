@@ -22,7 +22,6 @@ def insert_sample_data():
 
         print("Inserting sample data...")
 
-        # Truncate all tables to ensure clean slate
         tables_to_truncate = [
             'logs', 'transactions', 'sales', 'inventory', 'product_reviews',
             'shipping', 'payments', 'order_items', 'orders', 'profiles',
@@ -37,7 +36,6 @@ def insert_sample_data():
             except Exception as e:
                 print(f"Warning: Could not truncate {table}: {e}")
 
-        # Reset sequences
         sequences_to_reset = [
             'categories_id_seq', 'suppliers_id_seq', 'products_id_seq', 'customers_id_seq',
             'users_id_seq', 'orders_id_seq', 'order_items_id_seq', 'payments_id_seq',
@@ -73,10 +71,7 @@ def insert_sample_data():
         for i in tqdm(range(5000), desc="Suppliers"):
             name = f"Supplier {i+1}"
             contact = f"{random.choice(first_names)} {random.choice(last_names)}"
-            cursor.execute("""
-                INSERT INTO suppliers (name, contact_name, city, country, phone, email)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (name, contact, random.choice(cities), random.choice(countries),
+            cursor.execute(, (name, contact, random.choice(cities), random.choice(countries),
                   f"+1-{random.randint(100,999)}-{random.randint(1000,9999)}",
                   f"contact@supplier{i+1}.com"))
 
@@ -96,10 +91,7 @@ def insert_sample_data():
             status = random.choice(['active', 'inactive', 'pending'])
             reputation = random.randint(0, 1000)
 
-            cursor.execute("""
-                INSERT INTO users (name, email, age, city, country, created_at, status, reputation)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (name, email, age, city, country, created_at, status, reputation))
+            cursor.execute(, (name, email, age, city, country, created_at, status, reputation))
 
         print("   - Inserting products (100,000)...")
         for i in tqdm(range(100000), desc="Products"):
@@ -112,10 +104,7 @@ def insert_sample_data():
             description = f"High quality {category.lower()} product"
             category_id = random.randint(1, len(categories_list))
 
-            cursor.execute("""
-                INSERT INTO products (name, category, price, stock, supplier_id, rating, description, category_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (name, category, price, stock, supplier_id, rating, description, category_id))
+            cursor.execute(, (name, category, price, stock, supplier_id, rating, description, category_id))
 
         print("   - Inserting customers (500,000)...")
         for i in tqdm(range(500000), desc="Customers"):
@@ -126,10 +115,7 @@ def insert_sample_data():
             phone = f"+1-{random.randint(100,999)}-{random.randint(1000,9999)}"
             email = f"customer{i+1}@example.com"
 
-            cursor.execute("""
-                INSERT INTO customers (company_name, contact_name, city, country, phone, email)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (company_name, contact_name, city, country, phone, email))
+            cursor.execute(, (company_name, contact_name, city, country, phone, email))
 
         print("   - Inserting employees (10,000)...")
         for i in tqdm(range(10000), desc="Employees"):
@@ -139,10 +125,7 @@ def insert_sample_data():
             hire_date = datetime.now() - timedelta(days=random.randint(30, 365*5))
             email = f"employee{i+1}@company.com"
 
-            cursor.execute("""
-                INSERT INTO employees (name, department_id, salary, hire_date, email)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (name, dept_id, salary, hire_date.date(), email))
+            cursor.execute(, (name, dept_id, salary, hire_date.date(), email))
 
         print("   - Inserting orders and order items (600,000 orders)...")
         for i in tqdm(range(600000), desc="Orders"):
@@ -151,10 +134,7 @@ def insert_sample_data():
             order_date = datetime.now() - timedelta(days=random.randint(0, 365))
             status = random.choice(['pending', 'processing', 'shipped', 'delivered', 'cancelled'])
 
-            cursor.execute("""
-                INSERT INTO orders (user_id, customer_id, order_date, status)
-                VALUES (%s, %s, %s, %s) RETURNING id
-            """, (user_id, customer_id, order_date, status))
+            cursor.execute(, (user_id, customer_id, order_date, status))
 
             result = cursor.fetchone()
             if result is None:
@@ -171,14 +151,10 @@ def insert_sample_data():
                 cursor.execute("SELECT price FROM products WHERE id = %s", (product_id,))
                 result = cursor.fetchone()
                 if result is None:
-                    # Skip this item if product doesn't exist
                     continue
                 unit_price = result[0]
 
-                cursor.execute("""
-                    INSERT INTO order_items (order_id, product_id, quantity, unit_price)
-                    VALUES (%s, %s, %s, %s)
-                """, (order_id, product_id, quantity, unit_price))
+                cursor.execute(, (order_id, product_id, quantity, unit_price))
 
                 total_amount += unit_price * quantity
 
@@ -199,10 +175,7 @@ def insert_sample_data():
             method = random.choice(['credit_card', 'paypal', 'bank_transfer', 'cash'])
             status = random.choice(['completed', 'pending', 'failed'])
 
-            cursor.execute("""
-                INSERT INTO payments (order_id, amount, payment_date, method, status)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (order_id, amount, payment_date, method, status))
+            cursor.execute(, (order_id, amount, payment_date, method, status))
 
         print("   - Inserting user sessions (1,200,000)...")
         for i in tqdm(range(1200000), desc="Sessions"):
@@ -211,10 +184,7 @@ def insert_sample_data():
             logout_time = login_time + timedelta(minutes=random.randint(5, 480)) if random.random() > 0.1 else None
             ip_address = f"192.168.{random.randint(1,255)}.{random.randint(1,255)}"
 
-            cursor.execute("""
-                INSERT INTO user_sessions (user_id, login_time, logout_time, ip_address)
-                VALUES (%s, %s, %s, %s)
-            """, (user_id, login_time, logout_time, ip_address))
+            cursor.execute(, (user_id, login_time, logout_time, ip_address))
 
         print("   - Inserting product reviews (400,000)...")
         for i in tqdm(range(400000), desc="Reviews"):
@@ -224,10 +194,7 @@ def insert_sample_data():
             comment = random.choice(review_comments)
             created_at = datetime.now() - timedelta(days=random.randint(0, 365))
 
-            cursor.execute("""
-                INSERT INTO product_reviews (product_id, user_id, rating, comment, created_at)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (product_id, user_id, rating, comment, created_at))
+            cursor.execute(, (product_id, user_id, rating, comment, created_at))
 
         print("   - Inserting inventory records (100,000)...")
         for i in tqdm(range(100000), desc="Inventory"):
@@ -236,10 +203,7 @@ def insert_sample_data():
             quantity = random.randint(0, 500)
             last_updated = datetime.now() - timedelta(days=random.randint(0, 30))
 
-            cursor.execute("""
-                INSERT INTO inventory (product_id, warehouse_location, quantity, last_updated)
-                VALUES (%s, %s, %s, %s)
-            """, (product_id, warehouse_location, quantity, last_updated))
+            cursor.execute(, (product_id, warehouse_location, quantity, last_updated))
 
         print("   - Inserting sales records (200,000)...")
         for i in tqdm(range(200000), desc="Sales"):
@@ -255,10 +219,7 @@ def insert_sample_data():
             unit_price = result[0]
             total_amount = unit_price * quantity
 
-            cursor.execute("""
-                INSERT INTO sales (product_id, employee_id, quantity, sale_date, total_amount)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (product_id, employee_id, quantity, sale_date, total_amount))
+            cursor.execute(, (product_id, employee_id, quantity, sale_date, total_amount))
 
         print("   - Inserting transactions (700,000)...")
         for i in tqdm(range(700000), desc="Transactions"):
@@ -268,10 +229,7 @@ def insert_sample_data():
             type_ = random.choice(['purchase', 'refund', 'deposit', 'withdrawal'])
             status = random.choice(['completed', 'pending', 'failed'])
 
-            cursor.execute("""
-                INSERT INTO transactions (user_id, amount, transaction_date, type, status)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (user_id, amount, transaction_date, type_, status))
+            cursor.execute(, (user_id, amount, transaction_date, type_, status))
 
         print("   - Inserting logs (500,000)...")
         for i in tqdm(range(500000), desc="Logs"):
@@ -281,10 +239,7 @@ def insert_sample_data():
             ip_address = f"192.168.{random.randint(1,255)}.{random.randint(1,255)}"
             details = f"User performed {action}"
 
-            cursor.execute("""
-                INSERT INTO logs (user_id, action, timestamp, ip_address, details)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (user_id, action, timestamp, ip_address, details))
+            cursor.execute(, (user_id, action, timestamp, ip_address, details))
 
         print("   - Inserting profiles (2,500,000)...")
         for i in tqdm(range(2500000), desc="Profiles"):
@@ -293,10 +248,7 @@ def insert_sample_data():
             avatar_url = f"https://example.com/avatar/{user_id}.jpg"
             preferences = '{"theme": "dark", "notifications": true}'
 
-            cursor.execute("""
-                INSERT INTO profiles (user_id, bio, avatar_url, preferences)
-                VALUES (%s, %s, %s, %s)
-            """, (user_id, bio, avatar_url, preferences))
+            cursor.execute(, (user_id, bio, avatar_url, preferences))
 
         print("   - Inserting shipping records (25,000)...")
         cursor.execute("SELECT id FROM orders")
@@ -309,16 +261,13 @@ def insert_sample_data():
             shipped_date = datetime.now() - timedelta(days=random.randint(0, 14)) if status != 'pending' else None
             delivered_date = shipped_date + timedelta(days=random.randint(1, 7)) if shipped_date and status == 'delivered' else None
 
-            cursor.execute("""
-                INSERT INTO shipping (order_id, tracking_number, carrier, status, shipped_date, delivered_date)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (order_id, tracking_number, carrier, status, shipped_date, delivered_date))
+            cursor.execute(, (order_id, tracking_number, carrier, status, shipped_date, delivered_date))
 
         conn.commit()
         conn.close()
 
-        print("\n🎉 Data insertion complete!")
-        print("📊 Summary:")
+        print("\n Data insertion complete!")
+        print(" Summary:")
         print("   - 2,500,000 users")
         print("   - 100,000 products")
         print("   - 600,000 orders")
@@ -327,10 +276,10 @@ def insert_sample_data():
         print("   - 400,000 product reviews")
         print("   - And more...")
         print("   - Total: ~10,000,000+ rows across all tables")
-        print("\n🚀 You can now run: python scripts/run_real_ml_agent.py")
+        print("\n You can now run: python scripts/run_real_ml_agent.py")
 
     except Exception as e:
-        print(f"❌ Error inserting data: {e}")
+        print(f" Error inserting data: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

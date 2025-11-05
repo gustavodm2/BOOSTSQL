@@ -3,115 +3,147 @@ import os
 import json
 import random
 import logging
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Any, Tuple
+from dataclasses import dataclass
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class SimpleQueryGenerator:
-    def __init__(self, db_config: Optional[Dict[str, str]] = None):
+@dataclass
+class QueryInfo:
+    
+    query_id: int
+    query_sql: str
+    complexity: str
+    estimated_complexity_score: int
+
+class RobustQueryGenerator:
+    
+
+    def __init__(self, db_config: Dict[str, str]):
         self.db_config = db_config
-        self.db_connector = None
-        self.tables = {}
-        self.sample_values = {}
-        if db_config:
-            self._connect_and_analyze()
-        else:
-            self._use_mock_schema()
+        self.db_connector: Optional[Any] = None
+        self.tables: Dict[str, List[str]] = {}
+        self.table_relationships: Dict[str, List[Tuple[str, str, str]]] = {}
+        self.column_types: Dict[str, Dict[str, str]] = {}
+        self.table_row_counts: Dict[str, int] = {}
+        self.sample_values: Dict[str, Dict[str, List[Any]]] = {}
 
-    def _connect_and_analyze(self):
-        """Connect to database and get basic info"""
-        from src.database_connector import DatabaseConnector
-        self.db_connector = DatabaseConnector(self.db_config)
-        logger.info('🔌 Connected to database for query generation')
+        self._initialize_known_schema()
+        self._connect_and_validate()
 
-        # Get schema
-        schema = self.db_connector.discover_schema()
-        if not schema:
-            raise Exception("No tables found")
+    def _initialize_known_schema(self):
+        
+        self.known_relationships = {
+            'products': [('categories', 'category_id', 'id'), ('suppliers', 'supplier_id', 'id')],
+            'orders': [('users', 'user_id', 'id'), ('customers', 'customer_id', 'id')],
+            'order_items': [('orders', 'order_id', 'id'), ('products', 'product_id', 'id')],
+            'payments': [('orders', 'order_id', 'id')],
+            'user_sessions': [('users', 'user_id', 'id')],
+            'product_reviews': [('products', 'product_id', 'id'), ('users', 'user_id', 'id')],
+            'employees': [('departments', 'department_id', 'id')],
+            'inventory': [('products', 'product_id', 'id')],
+            'sales': [('products', 'product_id', 'id'), ('employees', 'employee_id', 'id')],
+            'transactions': [('users', 'user_id', 'id')],
+            'logs': [('users', 'user_id', 'id')],
+            'profiles': [('users', 'user_id', 'id')],
+            'shipping': [('orders', 'order_id', 'id')]
+        }
 
-        # Filter to tables with data
+    def _connect_and_validate(self):
+        
+        try:
+            from src.database_connector import DatabaseConnector
+            self.db_connector = DatabaseConnector(self.db_config)
+            logger.info(' Connected to database')
+
+            schema = self.db_connector.discover_schema()
+            if not schema:
+                raise Exception("No tables found in database")
+
+            self._analyze_database_schema(schema)
+            self._collect_table_statistics()
+            self._collect_sample_data()
+
+            logger.info(f' Database ready: {len(self.tables)} tables, {sum(self.table_row_counts.values())} total rows')
+
+        except Exception as e:
+            logger.error(f' Database connection/validation failed: {e}')
+            raise
+
+    def _analyze_database_schema(self, schema):
+        
         for table, columns in schema.items():
+            if table in self.known_relationships:
+                self.tables[table] = columns
+                self.table_relationships[table] = self.known_relationships[table]
+
+        for table in schema:
+            if table not in self.tables:
+                self.tables[table] = schema[table]
+                self.table_relationships[table] = []
+
+        self._get_column_types()
+
+    def _get_column_types(self):
+        
+        assert self.db_connector is not None
+        try:
+            with self.db_connector.get_connection() as conn:
+                cursor = conn.cursor()
+                for table in self.tables:
+                    self.column_types[table] = {}
+                    cursor.execute(, (table,))
+
+                    for row in cursor.fetchall():
+                        col_name, data_type = row
+                        self.column_types[table][col_name] = data_type
+        except Exception as e:
+            logger.warning(f'Could not get column types: {e}')
+
+    def _collect_table_statistics(self):
+        
+        assert self.db_connector is not None
+        for table in self.tables:
             try:
                 with self.db_connector.get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute(f"SELECT COUNT(*) FROM {table}")
                     count = cursor.fetchone()[0]
-                    if count > 0:
-                        self.tables[table] = columns
-                        # Get some sample values
-                        cursor.execute(f"SELECT * FROM {table} LIMIT 10")
-                        rows = cursor.fetchall()
-                        self.sample_values[table] = {}
-                        for col_idx, col_name in enumerate(columns):
-                            values = [row[col_idx] for row in rows if row[col_idx] is not None]
-                            if values:
-                                self.sample_values[table][col_name] = list(set(values))  # unique values
+                    self.table_row_counts[table] = count
             except Exception as e:
-                logger.warning(f'Skipping table {table}: {e}')
+                logger.warning(f'Could not get row count for {table}: {e}')
+                self.table_row_counts[table] = 0
 
-        logger.info(f'📊 Found {len(self.tables)} tables with data')
+    def _collect_sample_data(self):
+        
+        assert self.db_connector is not None
+        for table in self.tables:
+            self.sample_values[table] = {}
+            if self.table_row_counts[table] == 0:
+                continue
 
-    def _use_mock_schema(self):
-        """Use mock schema when no database connection"""
-        logger.info('🔌 Using mock schema for query generation (no database connection)')
+            try:
+                with self.db_connector.get_connection() as conn:
+                    cursor = conn.cursor()
 
-        # Mock schema based on create_tables.sql
-        self.tables = {
-            'users': ['id', 'name', 'email', 'age', 'city', 'country', 'created_at', 'status', 'reputation'],
-            'products': ['id', 'name', 'category', 'price', 'stock', 'supplier_id', 'rating', 'description', 'category_id'],
-            'orders': ['id', 'user_id', 'customer_id', 'order_date', 'status', 'total_amount'],
-            'customers': ['id', 'company_name', 'contact_name', 'city', 'country', 'phone', 'email'],
-            'categories': ['id', 'name', 'description'],
-            'suppliers': ['id', 'name', 'contact_name', 'city', 'country', 'phone', 'email'],
-            'order_items': ['id', 'order_id', 'product_id', 'quantity', 'unit_price'],
-            'user_sessions': ['id', 'user_id', 'login_time', 'logout_time', 'ip_address'],
-            'product_reviews': ['id', 'product_id', 'user_id', 'rating', 'comment', 'created_at'],
-            'departments': ['id', 'name', 'budget'],
-            'employees': ['id', 'name', 'department_id', 'salary', 'hire_date', 'email'],
-            'inventory': ['id', 'product_id', 'warehouse_location', 'quantity', 'last_updated'],
-            'sales': ['id', 'product_id', 'employee_id', 'quantity', 'sale_date', 'total_amount'],
-            'transactions': ['id', 'user_id', 'amount', 'transaction_date', 'type', 'status'],
-            'logs': ['id', 'user_id', 'action', 'timestamp', 'ip_address', 'details'],
-            'profiles': ['id', 'user_id', 'bio', 'avatar_url', 'preferences'],
-            'shipping': ['id', 'order_id', 'tracking_number', 'carrier', 'status', 'shipped_date', 'delivered_date'],
-            'payments': ['id', 'order_id', 'amount', 'payment_date', 'method', 'status']
-        }
+                    sample_size = min(50, self.table_row_counts[table])
+                    cursor.execute(f"SELECT * FROM {table} TABLESAMPLE BERNOULLI(5) LIMIT {sample_size}")
+                    rows = cursor.fetchall()
 
-        # Mock sample values
-        self.sample_values = {
-            'users': {
-                'status': ['active', 'inactive', 'pending'],
-                'city': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'],
-                'country': ['USA', 'Canada', 'UK', 'Germany', 'France']
-            },
-            'products': {
-                'category': ['Electronics', 'Clothing', 'Books', 'Home', 'Sports'],
-                'rating': [1.0, 2.0, 3.0, 4.0, 5.0]
-            },
-            'orders': {
-                'status': ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
-            },
-            'categories': {
-                'name': ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Toys']
-            }
-        }
+                    for col_idx, col_name in enumerate(self.tables[table]):
+                        values = [row[col_idx] for row in rows if row[col_idx] is not None]
+                        if values:
+                            unique_values = list(set(values))[:10]
+                            self.sample_values[table][col_name] = unique_values
 
-        logger.info(f'📊 Using mock schema with {len(self.tables)} tables')
+            except Exception as e:
+                logger.debug(f'Sample data collection failed for {table}: {e}')
 
-    def _get_sample_value(self, table, column):
-        """Get a random sample value for a column"""
-        if table in self.sample_values and column in self.sample_values[table]:
-            values = self.sample_values[table][column]
-            if values:
-                return random.choice(values)
-        return None
-
-    def _validate_query(self, query):
-        """Validate query can execute"""
-        if self.db_connector is None:
-            # Skip validation for mock schema
-            return True
+    def _validate_query_safely(self, query: str) -> bool:
+        
+        assert self.db_connector is not None
         try:
             with self.db_connector.get_connection() as conn:
                 cursor = conn.cursor()
@@ -121,179 +153,164 @@ class SimpleQueryGenerator:
             logger.debug(f'Query validation failed: {e}')
             return False
 
-    def generate_simple_query(self):
-        """Generate simple validated queries"""
-        table = random.choice(list(self.tables.keys()))
-        columns = self.tables[table]
+    def generate_order_analytics_query(self) -> Optional[str]:
+        
+        if 'orders' not in self.tables or 'order_items' not in self.tables:
+            return None
 
-        # Simple SELECT
-        if random.random() < 0.4:
-            selected_cols = random.sample(columns, min(3, len(columns)))
-            query = f"SELECT {', '.join(selected_cols)} FROM {table}"
-            if random.random() < 0.3:
-                query += f" LIMIT {random.randint(1, 50)}"
-        # COUNT
-        elif random.random() < 0.6:
-            query = f"SELECT COUNT(*) FROM {table}"
-        # Simple WHERE with real data
-        else:
-            column = random.choice(columns)
-            value = self._get_sample_value(table, column)
+        query = 
 
-            if value is not None:
-                if isinstance(value, str):
-                    # Escape quotes properly
-                    escaped_value = value.replace("'", "''")
-                    if random.random() < 0.7:
-                        query = f"SELECT * FROM {table} WHERE {column} = '{escaped_value}'"
-                    else:
-                        query = f"SELECT * FROM {table} WHERE {column} LIKE '%{escaped_value[:3]}%'"
-                elif isinstance(value, (int, float)):
-                    operator = random.choice(['=', '>', '<'])
-                    query = f"SELECT * FROM {table} WHERE {column} {operator} {value}"
-                else:
-                    query = f"SELECT * FROM {table} WHERE {column} = '{str(value)}'"
-            else:
-                # Fallback
-                query = f"SELECT * FROM {table} LIMIT 10"
+        return query.strip() if self._validate_query_safely(query) else None
 
-        return query if self._validate_query(query) else None
+    def generate_product_performance_query(self) -> Optional[str]:
+        
+        if 'products' not in self.tables:
+            return None
 
-    def generate_medium_query(self):
-        """Generate medium complexity queries"""
-        table = random.choice(list(self.tables.keys()))
+        query = 
 
-        # GROUP BY
-        if random.random() < 0.4:
-            group_cols = [col for col in self.tables[table] if col in ['category', 'city', 'country', 'status']]
-            if group_cols:
-                group_col = random.choice(group_cols)
-                query = f"SELECT {group_col}, COUNT(*) FROM {table} GROUP BY {group_col}"
-                return query if self._validate_query(query) else None
+        return query.strip() if self._validate_query_safely(query) else None
 
-        # ORDER BY
-        elif random.random() < 0.7:
-            column = random.choice(self.tables[table])
-            direction = random.choice(['ASC', 'DESC'])
-            query = f"SELECT * FROM {table} ORDER BY {column} {direction} LIMIT {random.randint(5, 20)}"
-            return query if self._validate_query(query) else None
+    def generate_user_behavior_query(self) -> Optional[str]:
+        
+        if 'users' not in self.tables:
+            return None
 
-        # Simple JOIN if possible
-        else:
-            # Look for potential joins
-            join_candidates = []
-            for t1 in self.tables:
-                for t2 in self.tables:
-                    if t1 != t2:
-                        # Check if there's a common column name that might be a foreign key
-                        common_cols = set(self.tables[t1]) & set(self.tables[t2])
-                        if common_cols:
-                            for col in common_cols:
-                                if col.endswith('_id') or col in ['id']:
-                                    join_candidates.append((t1, t2, col))
+        query = 
 
-            if join_candidates:
-                t1, t2, join_col = random.choice(join_candidates)
-                query = f"SELECT {t1}.*, {t2}.name FROM {t1} JOIN {t2} ON {t1}.{join_col} = {t2}.id LIMIT 10"
-                return query if self._validate_query(query) else None
+        return query.strip() if self._validate_query_safely(query) else None
 
-        # Fallback to simple query
-        return self.generate_simple_query()
+    def generate_inventory_management_query(self) -> Optional[str]:
+        
+        if 'inventory' not in self.tables or 'products' not in self.tables:
+            return None
 
-    def generate_complex_query(self):
-        """Generate complex queries - simplified version"""
-        # For now, just return medium queries as complex ones
-        # In a real implementation, this would include subqueries, window functions, etc.
-        return self.generate_medium_query()
+        query = 
 
-    def generate_queries(self, total_queries=500000):
-        """Generate balanced validated queries"""
-        queries_per_complexity = total_queries // 3
+        return query.strip() if self._validate_query_safely(query) else None
+
+    def generate_employee_department_query(self) -> Optional[str]:
+        
+        if 'employees' not in self.tables or 'departments' not in self.tables:
+            return None
+
+        query = 
+
+        return query.strip() if self._validate_query_safely(query) else None
+
+    def generate_time_series_revenue_query(self) -> Optional[str]:
+        
+        query = 
+
+        return query.strip() if self._validate_query_safely(query) else None
+
+    def generate_customer_segmentation_query(self) -> Optional[str]:
+        
+        query = 
+
+        return query.strip() if self._validate_query_safely(query) else None
+
+    def generate_supply_chain_query(self) -> Optional[str]:
+        
+        if 'suppliers' not in self.tables or 'products' not in self.tables:
+            return None
+
+        query = 
+
+        return query.strip() if self._validate_query_safely(query) else None
+
+    def generate_advanced_analytics_query(self) -> Optional[str]:
+        
+        query = 
+
+        return query.strip() if self._validate_query_safely(query) else None
+
+    def generate_comprehensive_business_query(self) -> Optional[str]:
+        
+        query = 
+
+        return query.strip() if self._validate_query_safely(query) else None
+
+    def generate_queries(self, total_queries: int = 100000) -> List[Dict]:
+        
+        query_generators = [
+            self.generate_order_analytics_query,
+            self.generate_product_performance_query,
+            self.generate_user_behavior_query,
+            self.generate_inventory_management_query,
+            self.generate_employee_department_query,
+            self.generate_time_series_revenue_query,
+            self.generate_customer_segmentation_query,
+            self.generate_supply_chain_query,
+            self.generate_advanced_analytics_query,
+            self.generate_comprehensive_business_query,
+        ]
+
         queries = []
+        generator_index = 0
+        attempts = 0
+        max_attempts = total_queries * 5
 
-        logger.info(f"🎯 Generating {total_queries} validated queries ({queries_per_complexity} per complexity level)")
+        logger.info(f" Generating {total_queries} REAL complex queries...")
 
-        complexities = ['simple', 'medium', 'complex']
+        while len(queries) < total_queries and attempts < max_attempts:
+            attempts += 1
 
-        for complexity in complexities:
-            logger.info(f"⚡ Generating {queries_per_complexity} {complexity} queries...")
-            successful = 0
-            attempts = 0
-            max_attempts = queries_per_complexity * 5  # Allow more failures
+            try:
+                generator = query_generators[generator_index % len(query_generators)]
+                query = generator()
 
-            while successful < queries_per_complexity and attempts < max_attempts:
-                attempts += 1
+                if query:
+                    queries.append({
+                        'query_id': len(queries) + 1,
+                        'query_sql': query,
+                        'complexity': 'complex',
+                        'estimated_complexity_score': len(query.split()) + (query.count('JOIN') * 10) + (query.count('WITH') * 15) + (query.count('OVER') * 8) + (query.count('CASE') * 5)
+                    })
 
-                try:
-                    if complexity == 'simple':
-                        query = self.generate_simple_query()
-                    elif complexity == 'medium':
-                        query = self.generate_medium_query()
-                    else:
-                        query = self.generate_complex_query()
+                    if len(queries) % 1000 == 0:
+                        logger.info(f" Generated {len(queries)}/{total_queries} complex queries")
 
-                    if query:
-                        queries.append({
-                            'query_id': len(queries) + 1,
-                            'query_sql': query,
-                            'complexity': complexity,
-                            'estimated_complexity_score': len(query.split()) + (query.count('JOIN') * 10) + (query.count('GROUP BY') * 5)
-                        })
-                        successful += 1
+                generator_index += 1
 
-                        if successful % 1000 == 0:
-                            logger.info(f"  ✅ Generated and validated {successful}/{queries_per_complexity} {complexity} queries")
+            except Exception as e:
+                logger.debug(f'Query generation failed: {e}')
+                generator_index += 1
+                continue
 
-                except Exception as e:
-                    logger.debug(f'Failed to generate {complexity} query: {e}')
-                    continue
-
-            logger.info(f"✅ Successfully generated and validated {successful} {complexity} queries")
-
-        # Shuffle queries
-        random.shuffle(queries)
-
-        logger.info(f"🎉 Total validated queries generated: {len(queries)}")
+        logger.info(f" Successfully generated {len(queries)} complex queries")
         return queries
 
 def main():
-    logger.info("🚀 SQLBoost Database-Aware Query Generator Starting...")
+    logger.info(" SQLBoost Robust Query Generator Starting...")
 
-    # Database config
     db_config = {'host': 'localhost', 'port': '5432', 'database': 'boostsql', 'user': 'postgres', 'password': '123'}
 
     try:
-        generator = SimpleQueryGenerator(db_config)
-        queries = generator.generate_queries(1250)
-    except Exception as e:
-        logger.warning(f"Database connection failed, using mock schema: {e}")
-        generator = SimpleQueryGenerator()  # Use mock schema
-        queries = generator.generate_queries(1250)
+        generator = RobustQueryGenerator(db_config)
+        queries = generator.generate_queries(1000)
 
-        # Save to file
         os.makedirs('data', exist_ok=True)
-        filepath = 'data/queries_1250.json'
+        filepath = 'data/complex_queries_1k.json'
         with open(filepath, 'w') as f:
             json.dump(queries, f, indent=2)
 
-        logger.info(f"💾 Validated queries saved to {filepath}")
-        logger.info(f"📁 File exists: {os.path.exists(filepath)}")
-        logger.info(f"📂 Current directory: {os.getcwd()}")
+        logger.info(f" Complex queries saved to {filepath}")
+        logger.info(f" File exists: {os.path.exists(filepath)}")
 
-        # Print summary
-        complexities = {}
-        for q in queries:
-            comp = q['complexity']
-            complexities[comp] = complexities.get(comp, 0) + 1
+        total_queries = len(queries)
+        if total_queries > 0:
+            avg_complexity = sum(q['estimated_complexity_score'] for q in queries) / total_queries
+            logger.info(" Query Generation Summary:")
+            logger.info(f"  Total queries: {total_queries}")
+            logger.info(f"  Average complexity score: {avg_complexity:.1f}")
+            logger.info("  All queries are highly complex with advanced SQL features")
 
-        logger.info("📊 Query Distribution:")
-        for comp, count in complexities.items():
-            logger.info(f"  {comp.capitalize()}: {count} queries")
-
-        logger.info("✅ Database-aware query generation completed!")
+        logger.info(" Robust query generation completed!")
 
     except Exception as e:
-        logger.error(f"❌ Query generation failed: {e}")
+        logger.error(f" Query generation failed: {e}")
+        raise
 
 if __name__ == '__main__':
     main()
