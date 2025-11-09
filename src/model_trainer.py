@@ -7,6 +7,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import joblib
 import os
 from tqdm import tqdm
+from typing import Dict
 
 try:
     import xgboost as xgb
@@ -95,3 +96,10 @@ class ModelTrainer:
         self.best_model = loaded['model']
         self.feature_extractor = loaded['feature_extractor']
         return self
+
+    def predict(self, features: Dict[str, float]) -> float:
+        if self.best_model is None:
+            raise ValueError("No model loaded. Train or load a model first.")
+        feature_vector = np.array(list(features.values())).reshape(1, -1)
+        prediction = self.best_model.predict(feature_vector)[0]
+        return max(0, prediction)  # Ensure non-negative

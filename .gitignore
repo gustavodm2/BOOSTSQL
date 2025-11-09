@@ -21,6 +21,7 @@ wheels/
 *.egg
 MANIFEST
 AGENTS.md
+AGENTS
 
 # PyInstaller
 *.manifest

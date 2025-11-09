@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQLBoost - AI-Powered SQL Query Optimization</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-rocket"></i>
+                <span>SQLBoost</span>
+            </div>
+            <div class="nav-links">
+                <button class="nav-link active" data-section="optimize">
+                    <i class="fas fa-magic"></i> Optimize
+                </button>
+                <button class="nav-link" data-section="history">
+                    <i class="fas fa-history"></i> History
+                </button>
+                <button class="nav-link" data-section="analytics">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </button>
+                <button class="nav-link" data-section="settings">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+                <button class="theme-toggle" id="theme-toggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero Section -->
+            <section class="section hero-section active" id="hero-section">
+                <div class="hero-content">
+                    <div class="hero-text">
+                        <h1>AI-Powered SQL Query Optimization</h1>
+                        <p>Transform your database queries with machine learning. Get instant performance improvements and intelligent recommendations.</p>
+                        <div class="hero-stats">
+                            <div class="stat">
+                                <div class="stat-number">2.5x</div>
+                                <div class="stat-label">Avg Performance Gain</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-number">6+</div>
+                                <div class="stat-label">Optimization Strategies</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-number">100%</div>
+                                <div class="stat-label">Query Safety</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-large" id="get-started-btn">
+                            <i class="fas fa-play"></i> Start Optimizing
+                        </button>
+                    </div>
+                    <div class="hero-visual">
+                        <div class="code-preview">
+                            <div class="code-header">
+                                <span class="code-title">Before → After</span>
+                                <div class="code-dots">
+                                    <span></span><span></span><span></span>
+                                </div>
+                            </div>
+                            <div class="code-content">
+                                <div class="code-line before">
+                                    <span class="line-number">1</span>
+                                    <span class="code-text">SELECT * FROM users WHERE id IN (SELECT user_id FROM orders)</span>
+                                </div>
+                                <div class="code-line after">
+                                    <span class="line-number">2</span>
+                                    <span class="code-text">SELECT u.* FROM users u JOIN orders o ON u.id = o.user_id</span>
+                                </div>
+                                <div class="performance-badge">
+                                    <i class="fas fa-rocket"></i> 3.2x Faster
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Optimize Section -->
+            <section class="section optimize-section" id="optimize-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-magic"></i> Query Optimization</h2>
+                    <p>Paste your SQL query below and let AI optimize it for maximum performance</p>
+                </div>
+
+                <div class="optimize-container">
+                    <div class="query-input-section">
+                        <div class="input-header">
+                            <h3><i class="fas fa-code"></i> Input Query</h3>
+                            <div class="input-actions">
+                                <button class="btn btn-secondary btn-small" id="load-example-btn">
+                                    <i class="fas fa-lightbulb"></i> Load Example
+                                </button>
+                                <button class="btn btn-secondary btn-small" id="clear-input-btn">
+                                    <i class="fas fa-trash"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div class="query-input-wrapper">
+                            <textarea
+                                id="query-input"
+                                class="query-textarea"
+                                placeholder="Enter your SQL query here...
+
+Example:
+SELECT u.name, COUNT(o.id) as orders
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE u.created_date >= '2023-01-01'
+GROUP BY u.id, u.name
+HAVING COUNT(o.id) > 5
+ORDER BY orders DESC"
+                                spellcheck="false"
+                            ></textarea>
+                            <div class="textarea-footer">
+                                <span class="char-count" id="char-count">0 characters</span>
+                                <div class="query-actions">
+                                    <button class="btn btn-primary" id="optimize-btn">
+                                        <i class="fas fa-magic"></i>
+                                        <span class="btn-text">Optimize Query</span>
+                                        <div class="spinner" id="optimize-spinner"></div>
+                                    </button>
+                                    <div class="keyboard-hint">
+                                        <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="query-output-section">
+                        <div class="output-header">
+                            <h3><i class="fas fa-check-circle"></i> Optimized Result</h3>
+                            <div class="output-actions">
+                                <button class="btn btn-secondary btn-small" id="copy-result-btn" disabled>
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                                <button class="btn btn-secondary btn-small" id="download-result-btn" disabled>
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                        <div class="query-output-wrapper">
+                            <textarea
+                                id="query-output"
+                                class="query-textarea"
+                                placeholder="Optimized query will appear here..."
+                                readonly
+                            ></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Dashboard -->
+                <div class="results-dashboard" id="results-dashboard">
+                    <div class="dashboard-header">
+                        <h3><i class="fas fa-exchange-alt"></i> Query Comparison</h3>
+                        <div class="dashboard-actions">
+                            <button class="btn btn-secondary btn-small" id="save-results-btn">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="query-comparison">
+                        <div class="comparison-panel original">
+                            <div class="panel-header">
+                                <h4><i class="fas fa-code"></i> Original Query</h4>
+                                <span class="panel-badge">Input</span>
+                            </div>
+                            <div class="optimization-score">
+                                <div class="score-label">Optimization Score</div>
+                                <div class="score-value" id="original-score">--/10</div>
+                                <div class="score-bar">
+                                    <div class="score-fill" id="original-score-fill"></div>
+                                </div>
+                            </div>
+                            <pre id="original-query-display" class="query-code"></pre>
+                        </div>
+                        <div class="comparison-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                            <div class="arrow-label">Optimized</div>
+                        </div>
+                        <div class="comparison-panel optimized">
+                            <div class="panel-header">
+                                <h4><i class="fas fa-magic"></i> Optimized Query</h4>
+                                <span class="panel-badge optimized">AI Enhanced</span>
+                            </div>
+                            <div class="optimization-score">
+                                <div class="score-label">Optimization Score</div>
+                                <div class="score-value" id="optimized-score">--/10</div>
+                                <div class="score-bar">
+                                    <div class="score-fill" id="optimized-score-fill"></div>
+                                </div>
+                            </div>
+                            <pre id="optimized-query-display" class="query-code"></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Section -->
+            <section class="section history-section" id="history-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> Query History</h2>
+                    <p>View your previous optimizations and performance trends</p>
+                </div>
+
+                <div class="history-controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search queries..." id="history-search">
+                    </div>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="improved">Improved</button>
+                        <button class="filter-btn" data-filter="recent">Recent</button>
+                    </div>
+                    <button class="btn btn-secondary" id="clear-history-btn">
+                        <i class="fas fa-trash"></i> Clear History
+                    </button>
+                </div>
+
+                <div class="history-list" id="history-list">
+                    <div class="empty-state">
+                        <i class="fas fa-history"></i>
+                        <p>No optimization history yet</p>
+                        <p>Start optimizing queries to build your history</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section class="section analytics-section" id="analytics-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-line"></i> Performance Analytics</h2>
+                    <p>Track your optimization performance and discover trends</p>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <div class="analytics-header">
+                            <h3>Average Performance Gain</h3>
+                            <div class="analytics-value" id="avg-gain">--x</div>
+                        </div>
+                        <div class="analytics-chart" id="performance-chart">
+                            <div class="chart-placeholder">
+                                <i class="fas fa-chart-line"></i>
+                                <p>Performance data will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-card">
+                        <div class="analytics-header">
+                            <h3>Strategy Effectiveness</h3>
+                        </div>
+                        <div class="strategy-breakdown" id="strategy-breakdown">
+                            <div class="strategy-item">
+                                <span class="strategy-name">Subquery to JOIN</span>
+                                <div class="strategy-bar">
+                                    <div class="strategy-fill" style="width: 0%"></div>
+                                </div>
+                                <span class="strategy-percent">--%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-card">
+                        <div class="analytics-header">
+                            <h3>Query Types Optimized</h3>
+                        </div>
+                        <div class="query-types" id="query-types">
+                            <div class="query-type">
+                                <span class="type-label">SELECT</span>
+                                <span class="type-count">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-card">
+                        <div class="analytics-header">
+                            <h3>Optimization Trends</h3>
+                        </div>
+                        <div class="trends-chart" id="trends-chart">
+                            <div class="chart-placeholder">
+                                <i class="fas fa-chart-area"></i>
+                                <p>Trend data will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section class="section settings-section" id="settings-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-cog"></i> Settings</h2>
+                    <p>Customize your SQLBoost experience</p>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="settings-card">
+                        <div class="settings-header">
+                            <h3><i class="fas fa-palette"></i> Appearance</h3>
+                        </div>
+                        <div class="settings-content">
+                            <div class="setting-item">
+                                <label class="setting-label">Theme</label>
+                                <div class="setting-control">
+                                    <select id="theme-select">
+                                        <option value="auto">Auto (System)</option>
+                                        <option value="light">Light</option>
+                                        <option value="dark">Dark</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">Font Size</label>
+                                <div class="setting-control">
+                                    <select id="font-size-select">
+                                        <option value="small">Small</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="large">Large</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="settings-header">
+                            <h3><i class="fas fa-server"></i> API Configuration</h3>
+                        </div>
+                        <div class="settings-content">
+                            <div class="setting-item">
+                                <label class="setting-label">API URL</label>
+                                <div class="setting-control">
+                                    <input type="text" id="api-url-input" value="http://localhost:8000" readonly>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">Connection Timeout</label>
+                                <div class="setting-control">
+                                    <input type="number" id="timeout-input" value="30" min="5" max="120">
+                                    <span class="unit">seconds</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="settings-header">
+                            <h3><i class="fas fa-save"></i> Data Management</h3>
+                        </div>
+                        <div class="settings-content">
+                            <div class="setting-item">
+                                <label class="setting-label">Auto-save Results</label>
+                                <div class="setting-control">
+                                    <label class="toggle">
+                                        <input type="checkbox" id="auto-save-toggle" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">History Retention</label>
+                                <div class="setting-control">
+                                    <select id="history-retention-select">
+                                        <option value="7">7 days</option>
+                                        <option value="30">30 days</option>
+                                        <option value="90">90 days</option>
+                                        <option value="unlimited">Unlimited</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="setting-actions">
+                                <button class="btn btn-danger" id="clear-all-data-btn">
+                                    <i class="fas fa-trash"></i> Clear All Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="settings-header">
+                            <h3><i class="fas fa-info-circle"></i> About</h3>
+                        </div>
+                        <div class="settings-content">
+                            <div class="about-content">
+                                <div class="about-logo">
+                                    <i class="fas fa-rocket"></i>
+                                    <span>SQLBoost</span>
+                                </div>
+                                <p class="about-description">
+                                    AI-powered SQL query optimization using machine learning to automatically improve database performance.
+                                </p>
+                                <div class="about-stats">
+                                    <div class="about-stat">
+                                        <span class="stat-number">6+</span>
+                                        <span class="stat-label">Strategies</span>
+                                    </div>
+                                    <div class="about-stat">
+                                        <span class="stat-number">ML</span>
+                                        <span class="stat-label">Powered</span>
+                                    </div>
+                                    <div class="about-stat">
+                                        <span class="stat-number">100%</span>
+                                        <span class="stat-label">Safe</span>
+                                    </div>
+                                </div>
+                                <div class="about-links">
+                                    <a href="http://localhost:8000/docs" target="_blank" class="about-link">
+                                        <i class="fas fa-external-link-alt"></i> API Docs
+                                    </a>
+                                    <a href="https://github.com" target="_blank" class="about-link">
+                                        <i class="fab fa-github"></i> GitHub
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <i class="fas fa-server"></i>
+                <span id="api-status">API: <span class="status-text">Connecting...</span></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-brain"></i>
+                <span id="agent-status">Agent: <span class="status-text">Loading...</span></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-clock"></i>
+                <span id="last-update">Last update: Never</span>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="notifications" id="notifications"></div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Optimizing your query...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

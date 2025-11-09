@@ -17,7 +17,7 @@ class DatabaseConnector:
 
     def _connect(self):
         try:
-            connection_string = f'postgresql://{self.db_config['user']}:{self.db_config['password']}@{self.db_config['host']}:{self.db_config['port']}/{self.db_config['database']}'
+            connection_string = f"postgresql://{self.db_config['user']}:{self.db_config['password']}@{self.db_config['host']}:{self.db_config['port']}/{self.db_config['database']}"
             self.engine = create_engine(connection_string)
             logger.info('Database connection established')
         except Exception as e:

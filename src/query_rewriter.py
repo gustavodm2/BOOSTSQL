@@ -52,49 +52,48 @@ class SQLQueryRewriter:
             return False
 
     def _subquery_to_join(self, parsed_query: sql.Statement, **kwargs) -> List[str]:
-        
+
         rewritten_queries = []
 
         query_str = str(parsed_query)
 
-        in_subquery_pattern = r'(\w+)\s+IN\s+\(\s*SELECT\s+(\w+)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+?))?\s*\)'
+        in_subquery_pattern = r'(\w+(?:\.\w+)?)\s+IN\s+\(\s*SELECT\s+(\w+(?:\.\w+)?)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+?))?\s*\)'
         matches = re.findall(in_subquery_pattern, query_str, re.IGNORECASE | re.DOTALL)
 
         for main_col, sub_col, sub_table, where_clause in matches:
             try:
-                join_query = re.sub(
-                    r'\w+\s+IN\s+\(\s*SELECT\s+\w+\s+FROM\s+\w+(?:\s+WHERE\s+.+)??\s*\)',
-                    f'{sub_table}.{sub_col} = {main_col}',
-                    query_str,
-                    count=1,
-                    flags=re.IGNORECASE | re.DOTALL
-                )
+                    # Remove the entire WHERE condition containing the IN subquery
+                    # Pattern: WHERE column IN (subquery) [AND/OR ...]
+                    where_pattern = r'WHERE\s+(\w+(?:\.\w+)?)\s+IN\s+\(\s*SELECT\s+(\w+(?:\.\w+)?)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+?))?\s*\)\s*(AND|OR)?'
+                    join_query = re.sub(where_pattern, '', query_str, count=1, flags=re.IGNORECASE | re.DOTALL)
 
-                from_match = re.search(r'FROM\s+(\w+)', join_query, re.IGNORECASE)
-                if from_match:
-                    main_table = from_match.group(1)
-                    join_clause = f'JOIN {sub_table} ON {sub_table}.{sub_col} = {main_table}.{main_col}'
+                    # If WHERE was completely removed and there's a trailing AND/OR, clean it up
+                    join_query = re.sub(r'\s+(AND|OR)\s+(GROUP BY|ORDER BY|LIMIT|$)', r' \2', join_query, flags=re.IGNORECASE)
 
+                    # Add JOIN clause to FROM
+                    join_clause = f'JOIN {sub_table} ON {sub_table}.{sub_col} = {main_col}'
                     join_query = re.sub(
-                        r'(FROM\s+\w+)',
+                        r'(FROM\s+\w+(?:\s+\w+)?)',
                         f'\\1 {join_clause}',
                         join_query,
                         count=1,
                         flags=re.IGNORECASE
                     )
 
+                    # Add subquery WHERE conditions to main WHERE
                     if where_clause and where_clause.strip():
+                        where_condition = f'{sub_table}.{where_clause.strip()}'
                         if 'WHERE' in join_query.upper():
                             join_query = re.sub(
                                 r'(WHERE\s+.+?)(GROUP BY|ORDER BY|LIMIT|$)',
-                                f'\\1 AND {where_clause} \\2',
+                                f'\\1 AND {where_condition} \\2',
                                 join_query,
                                 flags=re.IGNORECASE | re.DOTALL
                             )
                         else:
                             join_query = re.sub(
                                 r'(FROM\s+.+?)(GROUP BY|ORDER BY|LIMIT|$)',
-                                f'\\1 WHERE {where_clause} \\2',
+                                f'\\1 WHERE {where_condition} \\2',
                                 join_query,
                                 flags=re.IGNORECASE | re.DOTALL
                             )

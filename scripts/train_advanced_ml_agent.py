@@ -35,7 +35,7 @@ def train_advanced_ml_agent():
 
         logger.info(' ADVANCED ML AGENT TRAINING COMPLETED!')
         logger.info(' Agent Status:')
-        logger.info(f'  Knowledge base size: {status["knowledge_base_size"]}')
+        logger.info(f'  Knowledge base patterns: {status["knowledge_base_patterns"]}')
         logger.info(f'  Optimizations learned: {status["optimizations_learned"]}')
         logger.info(f'  Strategies available: {status["strategies_available"]}')
         logger.info(f'  Exploration rate: {status["exploration_rate"]:.3f}')
