@@ -6,6 +6,7 @@ An intelligent SQL query optimization system that uses machine learning to autom
 
 - **Machine Learning Optimization**: Learns from query execution patterns to suggest optimal transformations
 - **Multiple Strategies**: Subquery-to-JOIN conversion, CTE materialization, expression simplification, and more
+- **LLM Syntax Correction**: OpenAI-powered syntax error fixing for malformed queries
 - **REST API**: Production-ready FastAPI backend with automatic documentation
 - **Web Interface**: Modern, responsive frontend for easy query optimization
 - **Comprehensive Testing**: Full test suites for both API and CLI components
@@ -52,15 +53,21 @@ SQLBoost/
    Edit `config.py` with your PostgreSQL connection details.
 
 3. **Set up database:**
-   ```bash
-   psql -U your_user -d your_database < create_tables.sql
-   python scripts/insert_data.py  # Optional: populate with sample data
-   ```
+    ```bash
+    psql -U your_user -d your_database < create_tables.sql
+    python scripts/insert_data.py  # Optional: populate with sample data
+    ```
 
-4. **Train the ML agent:**
-   ```bash
-   python scripts/train_advanced_ml_agent.py
-   ```
+4. **Configure OpenAI (Optional):**
+    ```bash
+    export OPENAI_API_KEY="your-openai-api-key-here"
+    ```
+    *Note: Without API key, basic syntax correction is still available*
+
+5. **Train the ML agent:**
+    ```bash
+    python scripts/train_advanced_ml_agent.py
+    ```
 
 ## 🎯 Usage
 
@@ -148,6 +155,14 @@ python scripts/generate_queries.py --help
   - Expression simplification
 - **Adaptive Learning**: Improves performance over time
 - **Pattern Recognition**: Identifies similar query structures for optimization
+
+## 🧠 LLM Integration
+
+- **Syntax Correction**: OpenAI GPT automatically fixes syntax errors in optimized queries
+- **Fallback Support**: Basic correction available even without API key
+- **Seamless Integration**: LLM correction happens behind the scenes - users see clean results
+- **Visual Indicators**: Frontend shows "AI Corrected" badge when LLM fixes are applied
+- **Privacy Focused**: Only sends query syntax for correction, no data or context
 
 ## 🔒 Security & Best Practices
 

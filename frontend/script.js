@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8002';
 
 class SQLBoostApp {
     constructor() {
@@ -20,12 +20,12 @@ class SQLBoostApp {
         this.renderAnalytics();
     }
 
-    // Safe number formatting to prevent any errors
+    
     safeFormatNumber(value, decimals = 1) {
         if (value === null || value === undefined || typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
             return '--';
         }
-        // Use string formatting instead of toFixed to avoid any issues
+        
         const factor = Math.pow(10, decimals);
         const rounded = Math.round(value * factor) / factor;
         const parts = rounded.toString().split('.');
@@ -37,16 +37,16 @@ class SQLBoostApp {
     }
 
     init() {
-        // Set initial theme
+        
         document.documentElement.setAttribute('data-theme', this.theme);
         this.updateThemeToggle();
 
-        // Show hero section initially
+        
         this.showSection('hero');
     }
 
     bindEvents() {
-        // Navigation
+        
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -55,17 +55,17 @@ class SQLBoostApp {
             });
         });
 
-        // Theme toggle
+        
         document.getElementById('theme-toggle').addEventListener('click', () => {
             this.toggleTheme();
         });
 
-        // Hero section
+        
         document.getElementById('get-started-btn').addEventListener('click', () => {
             this.showSection('optimize');
         });
 
-        // Optimize section
+        
         document.getElementById('query-input').addEventListener('input', (e) => {
             this.updateCharCount();
         });
@@ -101,7 +101,7 @@ class SQLBoostApp {
             this.saveResults();
         });
 
-        // History section
+        
         document.getElementById('history-search').addEventListener('input', (e) => {
             this.filterHistory(e.target.value);
         });
@@ -116,7 +116,7 @@ class SQLBoostApp {
             this.clearHistory();
         });
 
-        // Settings section
+        
         document.getElementById('theme-select').addEventListener('change', (e) => {
             this.setTheme(e.target.value);
         });
@@ -144,24 +144,24 @@ class SQLBoostApp {
             this.clearAllData();
         });
 
-        // Status updates
-        setInterval(() => this.updateStatus(), 30000); // Update every 30 seconds
+        
+        setInterval(() => this.updateStatus(), 30000); 
     }
 
     showSection(sectionName) {
-        // Update navigation
+        
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.toggle('active', link.dataset.section === sectionName);
         });
 
-        // Update sections
+        
         document.querySelectorAll('.section').forEach(section => {
             section.classList.toggle('active', section.id === `${sectionName}-section`);
         });
 
         this.currentSection = sectionName;
 
-        // Update URL hash without triggering navigation
+        
         if (sectionName !== 'hero') {
             window.history.replaceState(null, null, `#${sectionName}`);
         } else {
@@ -252,7 +252,10 @@ class SQLBoostApp {
 
     displayResults(data) {
         try {
-            // Safe element access
+            if (!data || typeof data !== 'object') {
+                throw new Error('Invalid data received from API');
+            }
+            
             const safeGetElement = (id) => {
                 try {
                     return document.getElementById(id) || { textContent: '', value: '' };
@@ -263,22 +266,25 @@ class SQLBoostApp {
 
             const output = safeGetElement('query-output');
             const optimizedQuery = (data && data.best_optimization && data.best_optimization.optimized_query) ||
-                                   (data && data.original_query) || '';
+                                    (data && data.optimized_query) ||
+                                    (data && data.original_query) || '';
             output.value = optimizedQuery;
 
-            // Show the comparison between original and optimized queries
+            
             const originalQuery = (data && data.original_query) || '';
             safeGetElement('original-query-display').textContent = originalQuery;
             safeGetElement('optimized-query-display').textContent = optimizedQuery;
 
-            // Calculate and display optimization scores
+            
+
+            
             const originalScore = this.calculateOptimizationScore(originalQuery);
             const optimizedScore = this.calculateOptimizationScore(optimizedQuery);
 
             safeGetElement('original-score').textContent = `${originalScore}/10`;
             safeGetElement('optimized-score').textContent = `${optimizedScore}/10`;
 
-            // Update score bars
+            
             const originalFill = safeGetElement('original-score-fill');
             const optimizedFill = safeGetElement('optimized-score-fill');
 
@@ -289,28 +295,28 @@ class SQLBoostApp {
                 optimizedFill.style.width = `${(optimizedScore / 10) * 100}%`;
             }
 
-            // Show results dashboard
-            const dashboard = safeGetElement('results-dashboard');
-            if (dashboard && dashboard.classList) {
+            
+            const dashboard = document.getElementById('results-dashboard');
+            if (dashboard) {
                 dashboard.classList.add('show');
             }
 
-            // Enable action buttons
-            const copyBtn = safeGetElement('copy-result-btn');
-            const downloadBtn = safeGetElement('download-result-btn');
+            
+            const copyBtn = document.getElementById('copy-result-btn');
+            const downloadBtn = document.getElementById('download-result-btn');
             if (copyBtn) copyBtn.disabled = false;
             if (downloadBtn) downloadBtn.disabled = false;
 
-            // Update last update time
+            
             this.updateLastUpdate();
 
         } catch (error) {
             console.error('Error in displayResults:', error);
-            // Fallback: try to show something
+            
             try {
                 this.showNotification('Error displaying results. Please check the console for details.', 'error');
             } catch (e) {
-                // Last resort
+                
             }
         }
     }
@@ -402,40 +408,40 @@ class SQLBoostApp {
     }
 
     calculateOptimizationScore(query) {
-        let score = 10; // Start with perfect score (0 is best, 10 is worst)
+        let score = 10; 
 
         const upperQuery = query.toUpperCase();
 
-        // Penalize for SELECT *
+        
         if (upperQuery.includes('SELECT *')) {
             score -= 2;
         }
 
-        // Penalize for subqueries
+        
         const subqueryCount = (query.match(/\(\s*SELECT/gi) || []).length;
         score -= subqueryCount * 1.5;
 
-        // Penalize for multiple JOINs
+        
         const joinCount = (upperQuery.match(/\bJOIN\b/g) || []).length;
         if (joinCount > 2) {
             score -= (joinCount - 2) * 0.5;
         }
 
-        // Penalize for ORDER BY without LIMIT
+        
         if (upperQuery.includes('ORDER BY') && !upperQuery.includes('LIMIT')) {
             score -= 1;
         }
 
-        // Penalize for complex WHERE clauses (multiple OR conditions)
+        
         const orCount = (upperQuery.match(/\bOR\b/g) || []).length;
         score -= orCount * 0.3;
 
-        // Penalize for IN with subqueries
+        
         if (upperQuery.includes('IN (SELECT')) {
             score -= 1;
         }
 
-        // Penalize for multiple GROUP BY columns
+        
         const groupByMatch = upperQuery.match(/GROUP BY\s+([^)]+)/i);
         if (groupByMatch) {
             const groupByColumns = groupByMatch[1].split(',').length;
@@ -444,15 +450,15 @@ class SQLBoostApp {
             }
         }
 
-        // Penalize for long queries (rough heuristic)
+        
         if (query.length > 500) {
             score -= 0.5;
         }
 
-        // Ensure score is between 0 and 10
+        
         score = Math.max(0, Math.min(10, score));
 
-        return Math.round(score * 10) / 10; // Round to 1 decimal place
+        return Math.round(score * 10) / 10; 
     }
 
     loadExampleQuery() {
@@ -515,7 +521,7 @@ LIMIT 10`;
             timestamp: new Date().toISOString()
         };
 
-        // In a real app, this would save to a file or send to server
+        
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -532,7 +538,7 @@ LIMIT 10`;
         const historyItem = {
             id: Date.now(),
             originalQuery,
-            optimizedQuery: data.best_optimization?.optimized_query || originalQuery,
+            optimizedQuery: data.optimized_query || data.best_optimization?.optimized_query || originalQuery,
             improvement: data.best_optimization?.improvement_ratio || 1,
             strategy: data.best_optimization?.optimization_type || 'None',
             timestamp: new Date().toISOString(),
@@ -541,7 +547,7 @@ LIMIT 10`;
 
         this.history.unshift(historyItem);
 
-        // Keep only recent items based on retention setting
+        
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - this.settings.historyRetention);
         this.history = this.history.filter(item =>
@@ -602,7 +608,7 @@ LIMIT 10`;
                 }
             }).join('');
 
-            // Add click handlers
+            
             try {
                 container.querySelectorAll('.history-item').forEach(itemEl => {
                     itemEl.addEventListener('click', () => {
@@ -700,7 +706,7 @@ LIMIT 10`;
                 return;
             }
 
-            // Calculate average improvement
+            
             const improvements = this.history
                 .map(h => h && h.improvement)
                 .filter(i => i !== null && i !== undefined && typeof i === 'number' && !isNaN(i) && isFinite(i));
@@ -708,14 +714,14 @@ LIMIT 10`;
             const avgGainEl = document.getElementById('avg-gain');
             if (avgGainEl) avgGainEl.textContent = `${this.safeFormatNumber(avgImprovement)}x`;
 
-            // Strategy breakdown
+            
             const strategies = {};
             this.history.forEach(item => {
                 try {
                     const strategy = (item && item.strategy) || 'Unknown';
                     strategies[strategy] = (strategies[strategy] || 0) + 1;
                 } catch (e) {
-                    // Skip invalid items
+                    
                 }
             });
 
@@ -743,7 +749,7 @@ LIMIT 10`;
                     }).join('');
             }
 
-            // Query types
+            
             try {
                 const selectCount = this.history.filter(h => h && h.originalQuery && h.originalQuery.toUpperCase().includes('SELECT')).length;
                 const typeCountEl = document.querySelector('.type-count');
@@ -757,19 +763,19 @@ LIMIT 10`;
     }
 
     loadSettings() {
-        // Load theme
+        
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) {
             this.setTheme(savedTheme);
         }
 
-        // Load font size
+        
         const savedFontSize = localStorage.getItem('fontSize');
         if (savedFontSize) {
             this.setFontSize(savedFontSize);
         }
 
-        // Load other settings
+        
         document.getElementById('theme-select').value = this.theme;
         document.getElementById('font-size-select').value = this.settings.fontSize;
         document.getElementById('auto-save-toggle').checked = this.settings.autoSave;
@@ -863,16 +869,16 @@ LIMIT 10`;
 
         notifications.appendChild(notification);
 
-        // Trigger animation
+        
         setTimeout(() => notification.classList.add('show'), 10);
 
-        // Auto remove after 5 seconds
+        
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);
         }, 5000);
 
-        // Close button
+        
         notification.querySelector('.notification-close').addEventListener('click', () => {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);
@@ -901,11 +907,11 @@ LIMIT 10`;
     }
 }
 
-// Initialize app when DOM is loaded
+
 document.addEventListener('DOMContentLoaded', () => {
     window.sqlBoostApp = new SQLBoostApp();
 
-    // Handle URL hash changes
+    
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash.substring(1);
         if (hash && ['optimize', 'history', 'analytics', 'settings'].includes(hash)) {
@@ -913,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Check initial hash
+    
     const initialHash = window.location.hash.substring(1);
     if (initialHash && ['optimize', 'history', 'analytics', 'settings'].includes(initialHash)) {
         window.sqlBoostApp.showSection(initialHash);

@@ -3,7 +3,7 @@ import socketserver
 import os
 import sys
 
-PORT = 3001
+PORT = 3021
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -25,10 +25,10 @@ def main():
     with socketserver.TCPServer(("", PORT), CustomHTTPRequestHandler) as httpd:
         print("SQLBoost Frontend Server")
         print(f"Frontend: http://localhost:{PORT}")
-        print(f"API: http://localhost:8000")
-        print(f"API Docs: http://localhost:8000/docs")
+        print(f"API: http://localhost:8002")
+        print(f"API Docs: http://localhost:8002/docs")
         print()
-        print("Make sure the API server is running: python run_api.py")
+        print("Make sure the API server is running: python api.py")
         print("Press Ctrl+C to stop the server")
         print()
 

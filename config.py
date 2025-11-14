@@ -66,6 +66,18 @@ class Config:
             'timeout': int(os.getenv('EXECUTION_TIMEOUT', '300'))
         }
 
+        self.feature_extraction = {
+            'use_sqlparse': os.getenv('USE_SQLPARSE', 'false').lower() == 'true',
+            'fallback_features': os.getenv('FALLBACK_FEATURES', 'true').lower() == 'true'
+        }
+
+        self.llm = {
+            'api_key': os.getenv('OPENAI_API_KEY', ''),
+            'model': os.getenv('LLM_MODEL', 'gpt-3.5-turbo'),
+            'temperature': float(os.getenv('LLM_TEMPERATURE', '0.1')),
+            'max_tokens': int(os.getenv('LLM_MAX_TOKENS', '500'))
+        }
+
     def get_database_config(self) -> Dict[str, Any]:
         
         return self.database.copy()
