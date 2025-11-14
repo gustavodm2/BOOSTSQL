@@ -537,13 +537,7 @@ kbd {
 }
 
 /* Results Dashboard */
-.results-dashboard {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    display: none;
-}
+
 
 .results-dashboard.show {
     display: block;

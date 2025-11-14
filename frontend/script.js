@@ -270,38 +270,8 @@ class SQLBoostApp {
                                     (data && data.original_query) || '';
             output.value = optimizedQuery;
 
-            
-            const originalQuery = (data && data.original_query) || '';
-            safeGetElement('original-query-display').textContent = originalQuery;
-            safeGetElement('optimized-query-display').textContent = optimizedQuery;
 
-            
 
-            
-            const originalScore = this.calculateOptimizationScore(originalQuery);
-            const optimizedScore = this.calculateOptimizationScore(optimizedQuery);
-
-            safeGetElement('original-score').textContent = `${originalScore}/10`;
-            safeGetElement('optimized-score').textContent = `${optimizedScore}/10`;
-
-            
-            const originalFill = safeGetElement('original-score-fill');
-            const optimizedFill = safeGetElement('optimized-score-fill');
-
-            if (originalFill && originalFill.style) {
-                originalFill.style.width = `${(originalScore / 10) * 100}%`;
-            }
-            if (optimizedFill && optimizedFill.style) {
-                optimizedFill.style.width = `${(optimizedScore / 10) * 100}%`;
-            }
-
-            
-            const dashboard = document.getElementById('results-dashboard');
-            if (dashboard) {
-                dashboard.classList.add('show');
-            }
-
-            
             const copyBtn = document.getElementById('copy-result-btn');
             const downloadBtn = document.getElementById('download-result-btn');
             if (copyBtn) copyBtn.disabled = false;
@@ -322,7 +292,6 @@ class SQLBoostApp {
     }
 
     hideResults() {
-        document.getElementById('results-dashboard').classList.remove('show');
         document.getElementById('copy-result-btn').disabled = true;
         document.getElementById('download-result-btn').disabled = true;
     }
@@ -407,59 +376,7 @@ class SQLBoostApp {
         return tables.length > 3 ? `${tables.slice(0, 3).join(', ')}...` : tables.join(', ');
     }
 
-    calculateOptimizationScore(query) {
-        let score = 10; 
 
-        const upperQuery = query.toUpperCase();
-
-        
-        if (upperQuery.includes('SELECT *')) {
-            score -= 2;
-        }
-
-        
-        const subqueryCount = (query.match(/\(\s*SELECT/gi) || []).length;
-        score -= subqueryCount * 1.5;
-
-        
-        const joinCount = (upperQuery.match(/\bJOIN\b/g) || []).length;
-        if (joinCount > 2) {
-            score -= (joinCount - 2) * 0.5;
-        }
-
-        
-        if (upperQuery.includes('ORDER BY') && !upperQuery.includes('LIMIT')) {
-            score -= 1;
-        }
-
-        
-        const orCount = (upperQuery.match(/\bOR\b/g) || []).length;
-        score -= orCount * 0.3;
-
-        
-        if (upperQuery.includes('IN (SELECT')) {
-            score -= 1;
-        }
-
-        
-        const groupByMatch = upperQuery.match(/GROUP BY\s+([^)]+)/i);
-        if (groupByMatch) {
-            const groupByColumns = groupByMatch[1].split(',').length;
-            if (groupByColumns > 3) {
-                score -= (groupByColumns - 3) * 0.2;
-            }
-        }
-
-        
-        if (query.length > 500) {
-            score -= 0.5;
-        }
-
-        
-        score = Math.max(0, Math.min(10, score));
-
-        return Math.round(score * 10) / 10; 
-    }
 
     loadExampleQuery() {
         const exampleQuery = `SELECT
