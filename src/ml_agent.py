@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.feature_extractor import SQLFeatureExtractor
 from src.model_trainer import ModelTrainer
 from src.database_connector import DatabaseConnector
-from src.query_rewriter import SQLQueryRewriter
+from src.query_rewriter import SQLQueryRewriter, MLQueryRewriter
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,8 @@ class SQLBoostMLAgent:
 
         self.feature_extractor = SQLFeatureExtractor()
         self.model_trainer = ModelTrainer(feature_extractor=self.feature_extractor)
-        self.query_rewriter = SQLQueryRewriter()
+        self.query_rewriter = MLQueryRewriter()
+        self.query_rewriter.set_feature_extractor(self.feature_extractor)
 
         self.state = AgentState(
             knowledge_base={},
@@ -368,6 +369,12 @@ class SQLBoostMLAgent:
                 optimizations.append(optimization)
                 self.state.performance_history.append(optimization)
 
+                # Teach the ML rewriter about successful optimizations
+                if improvement_ratio > 1.1:  # Only learn from significant improvements
+                    self.query_rewriter.learn_from_optimization(
+                        query, candidate['query'], improvement_ratio
+                    )
+
             except Exception as e:
                 logger.debug(f"Optimization evaluation failed: {e}")
                 continue
@@ -387,8 +394,12 @@ class SQLBoostMLAgent:
         else:
             performance_comparison = "Query appears well-optimized"
 
+        # Return the optimized query if available, otherwise original
+        optimized_query = best_optimization.optimized_query if best_optimization else query
+
         return {
             'original_query': query,
+            'optimized_query': optimized_query,
             'performance_comparison': performance_comparison,
             'best_optimization': vars(best_optimization) if best_optimization else None,
             'all_candidates_evaluated': len(candidates),
@@ -458,20 +469,16 @@ class SQLBoostMLAgent:
         return candidates[:5]
 
     def _apply_optimization_strategy(self, query: str, strategy: str, features: Dict[str, float]) -> List[str]:
-        
-        strategy_mapping = {
-            'subquery_to_join': 'subquery_to_join',
-            'join_reordering': 'join_reordering',
-            'cte_optimization': 'cte_materialization',
-            'where_clause_pushdown': 'where_pushdown',
-            'index_suggestion': None,
-            'materialized_view': None
-        }
+        """
+        Apply optimization strategy using the intelligent ML rewriter
+        """
+        # The ML rewriter generates candidates intelligently, so we just call it
+        # It will use learned patterns and ML predictions to generate rewrites
+        candidates = self.query_rewriter.rewrite_query(query)
 
-        if strategy not in strategy_mapping or strategy_mapping[strategy] is None:
-            return [query]
-
-        return self.query_rewriter.rewrite_query(query, strategy_mapping[strategy])
+        # Filter candidates based on the requested strategy if needed
+        # For now, return all intelligent rewrites
+        return candidates if candidates else [query]
 
 
     def _generate_recommendations(self, query: str, features: Dict[str, float], best_opt: Optional[QueryOptimization]) -> List[str]:
@@ -551,6 +558,14 @@ class SQLBoostMLAgent:
                 for name, strategy in self.state.optimization_strategies.items()
             }
         }
+
+    def optimize_query_simple(self, query: str) -> str:
+        """
+        Simple method that returns the optimized query directly.
+        If no optimization is found, returns the original query.
+        """
+        result = self.optimize_query(query)
+        return result['optimized_query']
 
     def adaptive_learning(self):
         

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -7,7 +5,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from src.ml_agent import SQLBoostMLAgent
 
 def test_agent_optimization():
-    # Mock DB config
     db_config = {
         'host': 'localhost',
         'port': 5432,
@@ -18,7 +15,6 @@ def test_agent_optimization():
 
     agent = SQLBoostMLAgent(db_config)
 
-    # Test query
     query = "SELECT u.name FROM users u WHERE u.id IN (SELECT user_id FROM orders WHERE total > 100)"
 
     print("Testing agent optimization...")
@@ -26,7 +22,6 @@ def test_agent_optimization():
     print(query)
     print()
 
-    # Test direct rewriter call
     rewritten = agent.query_rewriter.rewrite_query(query, 'subquery_to_join')
     print("Direct rewriter result:")
     for q in rewritten:
