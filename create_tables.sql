@@ -8,180 +8,180 @@
 -- Connect to the boostsql database before running the rest of this script
 
 -- Create tables
-CREATE TABLE categories (
+CREATE TABLE categorias (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    description TEXT
+    nome VARCHAR(50) NOT NULL,
+    descricao TEXT
 );
 
-CREATE TABLE suppliers (
+CREATE TABLE fornecedores (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    contact_name VARCHAR(100),
-    city VARCHAR(50),
-    country VARCHAR(50),
-    phone VARCHAR(20),
+    nome VARCHAR(100) NOT NULL,
+    nome_contato VARCHAR(100),
+    cidade VARCHAR(50),
+    pais VARCHAR(50),
+    telefone VARCHAR(20),
     email VARCHAR(100)
 );
 
-CREATE TABLE products (
+CREATE TABLE produtos (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    category VARCHAR(50),
-    price DECIMAL(10,2) NOT NULL,
-    stock INTEGER DEFAULT 0,
-    supplier_id INTEGER REFERENCES suppliers(id),
-    rating DECIMAL(3,2) DEFAULT 0.0,
-    description TEXT,
-    category_id INTEGER REFERENCES categories(id)
+    nome VARCHAR(100) NOT NULL,
+    categoria VARCHAR(50),
+    preco DECIMAL(10,2) NOT NULL,
+    estoque INTEGER DEFAULT 0,
+    fornecedor_id INTEGER REFERENCES fornecedores(id),
+    avaliacao DECIMAL(3,2) DEFAULT 0.0,
+    descricao TEXT,
+    categoria_id INTEGER REFERENCES categorias(id)
 );
 
-CREATE TABLE customers (
+CREATE TABLE clientes (
     id SERIAL PRIMARY KEY,
-    company_name VARCHAR(100),
-    contact_name VARCHAR(100) NOT NULL,
-    city VARCHAR(50),
-    country VARCHAR(50),
-    phone VARCHAR(20),
+    nome_empresa VARCHAR(100),
+    nome_contato VARCHAR(100) NOT NULL,
+    cidade VARCHAR(50),
+    pais VARCHAR(50),
+    telefone VARCHAR(20),
     email VARCHAR(100) UNIQUE
 );
 
-CREATE TABLE users (
+CREATE TABLE usuarios (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    age INTEGER,
-    city VARCHAR(50),
-    country VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'active',
-    reputation INTEGER DEFAULT 0
+    idade INTEGER,
+    cidade VARCHAR(50),
+    pais VARCHAR(50),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'ativo',
+    reputacao INTEGER DEFAULT 0
 );
 
-CREATE TABLE orders (
+CREATE TABLE pedidos (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    customer_id INTEGER REFERENCES customers(id),
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'pending',
-    total_amount DECIMAL(10,2) DEFAULT 0.0
+    usuario_id INTEGER REFERENCES usuarios(id),
+    cliente_id INTEGER REFERENCES clientes(id),
+    data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'pendente',
+    valor_total DECIMAL(10,2) DEFAULT 0.0
 );
 
-CREATE TABLE order_items (
+CREATE TABLE itens_pedido (
     id SERIAL PRIMARY KEY,
-    order_id INTEGER REFERENCES orders(id),
-    product_id INTEGER REFERENCES products(id),
-    quantity INTEGER NOT NULL,
-    unit_price DECIMAL(10,2) NOT NULL
+    pedido_id INTEGER REFERENCES pedidos(id),
+    produto_id INTEGER REFERENCES produtos(id),
+    quantidade INTEGER NOT NULL,
+    preco_unitario DECIMAL(10,2) NOT NULL
 );
 
-CREATE TABLE payments (
+CREATE TABLE pagamentos (
     id SERIAL PRIMARY KEY,
-    order_id INTEGER REFERENCES orders(id),
-    amount DECIMAL(10,2) NOT NULL,
-    payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    method VARCHAR(20),
-    status VARCHAR(20) DEFAULT 'completed'
+    pedido_id INTEGER REFERENCES pedidos(id),
+    valor DECIMAL(10,2) NOT NULL,
+    data_pagamento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    metodo VARCHAR(20),
+    status VARCHAR(20) DEFAULT 'concluido'
 );
 
-CREATE TABLE user_sessions (
+CREATE TABLE sessoes_usuario (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    login_time TIMESTAMP NOT NULL,
-    logout_time TIMESTAMP,
-    ip_address INET
+    usuario_id INTEGER REFERENCES usuarios(id),
+    hora_login TIMESTAMP NOT NULL,
+    hora_logout TIMESTAMP,
+    endereco_ip INET
 );
 
-CREATE TABLE product_reviews (
+CREATE TABLE avaliacoes_produto (
     id SERIAL PRIMARY KEY,
-    product_id INTEGER REFERENCES products(id),
-    user_id INTEGER REFERENCES users(id),
-    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
-    comment TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    produto_id INTEGER REFERENCES produtos(id),
+    usuario_id INTEGER REFERENCES usuarios(id),
+    nota INTEGER CHECK (nota >= 1 AND nota <= 5),
+    comentario TEXT,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE departments (
+CREATE TABLE departamentos (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    budget DECIMAL(12,2)
+    nome VARCHAR(50) NOT NULL,
+    orcamento DECIMAL(12,2)
 );
 
-CREATE TABLE employees (
+CREATE TABLE funcionarios (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    department_id INTEGER REFERENCES departments(id),
-    salary DECIMAL(10,2),
-    hire_date DATE,
+    nome VARCHAR(100) NOT NULL,
+    departamento_id INTEGER REFERENCES departamentos(id),
+    salario DECIMAL(10,2),
+    data_contratacao DATE,
     email VARCHAR(100) UNIQUE
 );
 
-CREATE TABLE inventory (
+CREATE TABLE estoque (
     id SERIAL PRIMARY KEY,
-    product_id INTEGER REFERENCES products(id),
-    warehouse_location VARCHAR(50),
-    quantity INTEGER DEFAULT 0,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    produto_id INTEGER REFERENCES produtos(id),
+    local_armazem VARCHAR(50),
+    quantidade INTEGER DEFAULT 0,
+    ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE sales (
+CREATE TABLE vendas (
     id SERIAL PRIMARY KEY,
-    product_id INTEGER REFERENCES products(id),
-    employee_id INTEGER REFERENCES employees(id),
-    quantity INTEGER,
-    sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total_amount DECIMAL(10,2)
+    produto_id INTEGER REFERENCES produtos(id),
+    funcionario_id INTEGER REFERENCES funcionarios(id),
+    quantidade INTEGER,
+    data_venda TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    valor_total DECIMAL(10,2)
 );
 
-CREATE TABLE transactions (
+CREATE TABLE transacoes (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    amount DECIMAL(10,2),
-    transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    type VARCHAR(20),
+    usuario_id INTEGER REFERENCES usuarios(id),
+    valor DECIMAL(10,2),
+    data_transacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    tipo VARCHAR(20),
     status VARCHAR(20)
 );
 
 CREATE TABLE logs (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    action VARCHAR(100),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ip_address INET,
-    details TEXT
+    usuario_id INTEGER REFERENCES usuarios(id),
+    acao VARCHAR(100),
+    data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    endereco_ip INET,
+    detalhes TEXT
 );
 
-CREATE TABLE profiles (
+CREATE TABLE perfis (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
+    usuario_id INTEGER REFERENCES usuarios(id),
     bio TEXT,
-    avatar_url VARCHAR(255),
-    preferences JSONB
+    url_avatar VARCHAR(255),
+    preferencias JSONB
 );
 
-CREATE TABLE shipping (
+CREATE TABLE envios (
     id SERIAL PRIMARY KEY,
-    order_id INTEGER REFERENCES orders(id),
-    tracking_number VARCHAR(50),
-    carrier VARCHAR(50),
+    pedido_id INTEGER REFERENCES pedidos(id),
+    codigo_rastreio VARCHAR(50),
+    transportadora VARCHAR(50),
     status VARCHAR(20),
-    shipped_date TIMESTAMP,
-    delivered_date TIMESTAMP
+    data_envio TIMESTAMP,
+    data_entrega TIMESTAMP
 );
 
 -- Create indexes for better performance
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_city ON users(city);
-CREATE INDEX idx_orders_user_id ON orders(user_id);
-CREATE INDEX idx_orders_date ON orders(order_date);
-CREATE INDEX idx_products_category ON products(category);
-CREATE INDEX idx_products_price ON products(price);
-CREATE INDEX idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX idx_payments_order_id ON payments(order_id);
-CREATE INDEX idx_user_sessions_user_id ON user_sessions(user_id);
-CREATE INDEX idx_product_reviews_product_id ON product_reviews(product_id);
-CREATE INDEX idx_logs_user_id ON logs(user_id);
-CREATE INDEX idx_transactions_user_id ON transactions(user_id);
+CREATE INDEX idx_usuarios_email ON usuarios(email);
+CREATE INDEX idx_usuarios_city ON usuarios(cidade);
+CREATE INDEX idx_pedidos_usuario_id ON pedidos(usuario_id);
+CREATE INDEX idx_pedidos_date ON pedidos(data_pedido);
+CREATE INDEX idx_produtos_categoria ON produtos(categoria);
+CREATE INDEX idx_produtos_preco ON produtos(preco);
+CREATE INDEX idx_itens_pedido_pedido_id ON itens_pedido(pedido_id);
+CREATE INDEX idx_pagamentos_pedido_id ON pagamentos(pedido_id);
+CREATE INDEX idx_sessoes_usuario_usuario_id ON sessoes_usuario(usuario_id);
+CREATE INDEX idx_avaliacoes_produto_produto_id ON avaliacoes_produto(produto_id);
+CREATE INDEX idx_logs_usuario_id ON logs(usuario_id);
+CREATE INDEX idx_transacoes_usuario_id ON transacoes(usuario_id);
 
 COMMIT;
 
